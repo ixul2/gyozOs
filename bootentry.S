@@ -42,8 +42,6 @@
 
 .globl boot_start                               # Entry point
 boot_start:
-.global main
-main:
         .code16                         # This runs in real mode
         cli                             # Disable interrupts
         cld                             # String operations increment
@@ -128,6 +126,8 @@ real_to_prot:
         # reload %cs.  Has the effect of just jmp to the next
         # instruction, but simultaneously loads CS with
         # $SEGSEL_BOOT_CODE.
+        
+        ljmp $SEGSEL_BOOT_CODE, $boot
        	
 
 # Segment descriptors
@@ -143,11 +143,8 @@ gdtdesc:
         .long 0
 
 # mark as bootable
-.fill 510-(.-main), 1, 0    # count, size, value
+.fill 510-(.-boot_start), 1, 0    # count, size, value
 .word 0xaa55		    # mark as bootable
-
-
-
 
 msg:
 .asciz "Bonjour le monde\r\n"    # zero-terminated ascii string

@@ -34,16 +34,18 @@ static void boot_readseg(uintptr_t dst, uint32_t src_sect, size_t filesz,
 
 // boot
 //    Load the kernel and jump to it.
+
 void boot(void) {
+  while (1);
   // read 1st page off disk (should include programs as well as header)
   // and check validity
-  boot_readseg((uintptr_t)ELFHDR, 1, PAGESIZE, PAGESIZE);
-  while (ELFHDR->e_magic != ELF_MAGIC) {
+//  boot_readseg((uintptr_t)ELFHDR, 1, PAGESIZE, PAGESIZE);
+//  while (ELFHDR->e_magic != ELF_MAGIC) {
     /* do nothing */
-  }
+//  }
 
   // load each program segment
-  elf_program *ph = (elf_program *)((uint8_t *)ELFHDR + ELFHDR->e_phoff);
+/*  elf_program *ph = (elf_program *)((uint8_t *)ELFHDR + ELFHDR->e_phoff);
   elf_program *eph = ph + ELFHDR->e_phnum;
   for (; ph < eph; ++ph) {
     boot_readseg(ph->p_va, ph->p_offset / SECTORSIZE + 1, ph->p_filesz,
@@ -53,7 +55,7 @@ void boot(void) {
   // jump to the kernel
   typedef void (*kernel_entry_t)(void) __attribute__((noreturn));
   kernel_entry_t kernel_entry = (kernel_entry_t)ELFHDR->e_entry;
-  kernel_entry();
+  kernel_entry();*/
 }
 
 // boot_readseg(dst, src_sect, filesz, memsz)
