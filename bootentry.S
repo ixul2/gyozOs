@@ -126,13 +126,7 @@ real_to_prot:
         # reload %cs.  Has the effect of just jmp to the next
         # instruction, but simultaneously loads CS with
         # $SEGSEL_BOOT_CODE.
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        ljmp $SEGSEL_BOOT_CODE, $0x21b
+        ljmp $SEGSEL_BOOT_CODE, $boot
        	
 
 # Segment descriptors
@@ -146,10 +140,3 @@ gdtdesc:
         .word 0x0f                           # sizeof(gdt) - 1
         .long gdt                            # address gdt
         .long 0
-
-# mark as bootable
-.fill 510-(.-boot_start), 1, 0    # count, size, value
-.word 0xaa55		    # mark as bootable
-
-msg:
-.asciz "Bonjour le monde\r\n"    # zero-terminated ascii string
