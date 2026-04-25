@@ -38,7 +38,7 @@
 
 
 # Define some constants
-.set SEGSEL_BOOT_CODE,0x8       # code segment selector
+.set SEGSEL_BOOT_CODE, 0x8       # code segment selector
 
 .globl boot_start                               # Entry point
 boot_start:
@@ -126,8 +126,13 @@ real_to_prot:
         # reload %cs.  Has the effect of just jmp to the next
         # instruction, but simultaneously loads CS with
         # $SEGSEL_BOOT_CODE.
-        
-        ljmp $SEGSEL_BOOT_CODE, $boot
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        ljmp $SEGSEL_BOOT_CODE, $0x21b
        	
 
 # Segment descriptors
