@@ -1,22 +1,15 @@
-//PAH PAH PAH ON FAIT UN KERNEL
 #include <stdint.h>
 
-int print();
+uint32_t print();
 
-int kernel(){
-    uint16_t* video = (uint16_t*)0xB8000;
-	print();
-    const char* msg = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-    uint8_t color = 0x0F; // White on black
-
-    for (int i = 0; i < 1; i++) {
-    	char c = msg[54];
-        int a = ((uint16_t)color << 8) | (c%10)+48;
+uint32_t kernel(){
+    volatile uint16_t* vmem = (uint16_t*) 0xB8000;
+    for (uint32_t i = 0; i < 400; i++){
+    vmem[i] = 0x1F41+(i%26);
     }
-
     while (1); // Halt
 }
 
-int print(){
+uint32_t print(){
 	return 2;
 }
