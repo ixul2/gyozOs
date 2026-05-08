@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "io.h"
 
 int is_shifted = 0; 
 
@@ -55,3 +56,12 @@ void keyboard_handler(unsigned char c){
         VGABuffer[0] = 0x0F00+ascii_code;
 }
 
+void console_print(uint32_t l, uint32_t c, const char* s){
+    volatile uint16_t* vmem = (uint16_t*) 0xB8000;
+    uint32_t max = 80 * 25;
+    uint32_t pos = l*80 + c;
+    for(uint32_t i = 0; s[i] != '\0'; i++){
+        vmem[(pos + i) % max] = s[i] | 0x1F00 ;
+    }
+    return;
+}

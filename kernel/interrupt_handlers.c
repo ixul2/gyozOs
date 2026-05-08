@@ -44,8 +44,8 @@ void setupInterrupts(){
 	IDT_ptr idt_ptr;
 	setupIDTable(&idt_ptr);
 	setupPIC();
-	__asm__ __volatile__("lidt %0" : : "m"(idt_ptr));
-	__asm__ __volatile__("sti");
+	__asm__ __volatile__("lidt %0" : : "m"(idt_ptr)); //tell processor where IDT is
+	__asm__ __volatile__("sti"); 
 }
 
 
