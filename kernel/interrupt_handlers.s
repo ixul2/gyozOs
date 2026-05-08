@@ -1,4 +1,4 @@
-.globl dummy_handler, keyboard_handler_wrapper;
+.globl dummy_handler, keyboard_handler_wrapper, print_int_asm;
 dummy_handler:
     iretq
     
@@ -22,4 +22,8 @@ keyboard_handler_wrapper:
     popq %rdx
     popq %rcx
     popq %rax
+    iretq
+
+print_int_asm:
+    call print_int_int
     iretq

@@ -1,7 +1,9 @@
 #include <stdint.h>
+#include "io.h"
 #include "interrupt_handlers.h"
 extern void dummy_handler(void);
 extern void keyboard_handler_wrapper(void);
+extern void print_int_asm(void);
 
 IDT_entry IDTable[256];
 
@@ -18,9 +20,10 @@ void setupIDTEntry(IDT_entry* IDTEntry, uint64_t handlerAddr, int privilege){
 
 void setupIDTable(IDT_ptr *idt_ptr){
 	for (int i = 0; i < 256; i++){
-		setupIDTEntry(&IDTable[i], (uint64_t) dummy_handler, 0);
+		setupIDTEntry(&IDTable[i], (uint64_t) dummy_handler, 0); //to not crash
 	}
-	setupIDTEntry(&IDTable[33], (uint64_t) keyboard_handler_wrapper, 0);
+	setupIDTEntry(&IDTable[33], (uint64_t) keyboard_handler_wrapper, 0); //keyboard
+	setupIDTEntry(&IDTable[48], (uint64_t) print_int_asm, 3);
 	idt_ptr->base = (uint64_t) IDTable;
 	idt_ptr->limit = sizeof(IDTable)-1;
 }
@@ -46,6 +49,17 @@ void setupInterrupts(){
 	setupPIC();
 	__asm__ __volatile__("lidt %0" : : "m"(idt_ptr)); //tell processor where IDT is
 	__asm__ __volatile__("sti"); 
+}
+
+void print_int_int(unsigned int c){
+	char buffer[64];
+	buffer[63] = '\0';
+	int cursor = 62;
+	while(c){
+		buffer[cursor--] = 48+(c%10);
+		c = c/10;
+	}
+	console_print(0, 0, &buffer[cursor+1]);
 }
 
 
