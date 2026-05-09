@@ -1,5 +1,4 @@
 #include "x86-64.h"
-
 #include "elf.h"
 
 // boot.c

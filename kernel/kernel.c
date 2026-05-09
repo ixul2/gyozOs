@@ -4,6 +4,8 @@
 
 uint32_t kernel(){
     setupInterrupts();
+    setupDrive();
+    while(1);
     shell();
 }
 
