@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "x86-64.h"
 #include "io.h"
 #include "interrupt_handlers.h"
 extern void dummy_handler(void);
@@ -19,28 +20,28 @@ void setupIDTEntry(IDT_entry* IDTEntry, uint64_t handlerAddr, int privilege){
 }
 
 void setupIDTable(IDT_ptr *idt_ptr){
-	for (int i = 0; i < 256; i++){
-		setupIDTEntry(&IDTable[i], (uint64_t) dummy_handler, 0); //to not crash
-	}
 	setupIDTEntry(&IDTable[33], (uint64_t) keyboard_handler_wrapper, 0); //keyboard
-	setupIDTEntry(&IDTable[48], (uint64_t) print_int_asm, 3);
+	setupIDTEntry(&IDTable[48], (uint64_t) print_int_asm, 3); //custom interrupts
 	idt_ptr->base = (uint64_t) IDTable;
 	idt_ptr->limit = sizeof(IDTable)-1;
 }
 
 void setupPIC(){
-	__asm__ __volatile__("movb $0x11, %al\n" "outb %al, $0x20"); //send ICW1 to slave and master (initialization)
-	__asm__ __volatile__("movb $0x11, %al\n" "outb %al, $0xA0");
+	outb(0x20, 0x11); //send ICW1 to slave and master (initialization)
+	outb(0xA0, 0x11);
 	
-	__asm__ __volatile__("movb $0x20, %al\n" "outb %al, $0x21");
-	__asm__ __volatile__("movb $0x11, %al\n" "outb %al, $0xA1");
-	__asm__ __volatile__("movb $0x28, %al\n" "outb %al, $0x20");
-	__asm__ __volatile__("movb $0x04, %al\n" "outb %al, $0x21");
-	__asm__ __volatile__("movb $0x02, %al\n" "outb %al, $0xA1");
-	__asm__ __volatile__("movb $0x01, %al\n" "outb %al, $0x21");
-	__asm__ __volatile__("movb $0x01, %al\n" "outb %al, $0xA1");
-	__asm__ __volatile__("movb $0xFD, %al\n" "outb %al, $0x21");
-	__asm__ __volatile__("movb $0xFF, %al\n" "outb %al, $0xA1");
+	outb(0x21, 0x20); //IRQ0 -> INT 0x20 ... IRQ7 -> INT 0x27 (ICW2)	
+	outb(0x20, 0x28); //IRQ8 -> INT 0x28 ... IRQ15 -> INT 0x2F
+	
+	
+	outb(0x21, 0x04); //send ICW3 to connect slave to IRQ2
+	outb(0xA1, 0x02);
+	
+	outb(0x21, 0x01); //enable 8086/88 mode
+	outb(0xA1, 0x01);
+	
+	outb(0x21, 0xFD); //unmask keyboard IRQ
+	outb(0xA1, 0xFF);
 }
 
 void setupInterrupts(){
