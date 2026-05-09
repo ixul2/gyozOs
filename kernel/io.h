@@ -3,5 +3,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define PAGE_DIRECTORY_SIZE 1024
+#define PAGE_TABLE_SIZE 1024
+#define PAGE_SIZE 4096
+#define PAGE_PRESENT 0x1
+#define PAGE_RW      0x2
+#define PAGE_USER    0x4
+
 void console_print(uint32_t l, uint32_t c, const char* s);
 char keyboard_to_ascii(unsigned char c, int is_shifted);
