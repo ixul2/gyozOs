@@ -1,4 +1,4 @@
-.globl dummy_handler, keyboard_handler_wrapper, print_int_asm;
+.globl dummy_handler, keyboard_handler_wrapper, pagefault_handler_wrapper, print_int_asm;
 dummy_handler:
     iretq
     

@@ -4,6 +4,7 @@
 #include "interrupt_handlers.h"
 extern void dummy_handler(void);
 extern void keyboard_handler_wrapper(void);
+extern void pagefault_handler_wrapper(void);
 extern void print_int_asm(void);
 
 IDT_entry IDTable[256];
