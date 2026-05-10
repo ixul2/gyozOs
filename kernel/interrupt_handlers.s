@@ -27,3 +27,12 @@ keyboard_handler_wrapper:
 print_int_asm:
     call console_print_int_wrapper
     iretq
+
+
+pagefault_handler_wrapper:
+    pushq %rdi 		    # calls keyboard_handler(keycode)
+    movq %cr2, %rdi
+    call pagefault_handler
+    pop %rdi
+    iretq
+

@@ -20,6 +20,7 @@ void setupIDTEntry(IDT_entry* IDTEntry, uint64_t handlerAddr, int privilege){
 }
 
 void setupIDTable(IDT_ptr *idt_ptr){
+	setupIDTEntry(&IDTable[14], (uint64_t) pagefault_handler_wrapper, 0); //pagefault
 	setupIDTEntry(&IDTable[33], (uint64_t) keyboard_handler_wrapper, 0); //keyboard
 	setupIDTEntry(&IDTable[48], (uint64_t) print_int_asm, 3); //custom interrupts
 	idt_ptr->base = (uint64_t) IDTable;

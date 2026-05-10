@@ -13,3 +13,7 @@ void memory_init(void){
     page_directory[0] =
         ((uint32_t)first_page_table) | PAGE_PRESENT | PAGE_RW;
 }
+
+void pagefault_handler(uintptr_t addr){
+	
+}

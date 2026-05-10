@@ -167,30 +167,3 @@ void readFile(FAT32_Metadata infoFat, uint32_t dirCluster, uint8_t* buffer, int 
 		}
 	}
 }
-
-void setupDrive(){
-    int partitionStart, foundDisk;
-    drive_info activeDrive;
-    FAT32_Metadata infoFat;
-    FAT32_entry entry;
-    foundDisk = false;
-    for (int activeDriveIndex = 0; activeDriveIndex < 3; activeDriveIndex++){
-    	activeDrive = possibleDrives[activeDriveIndex];
-        if (pingDisk(activeDrive)){
-        	foundDisk = true;
-        	break; //we stop when we find the active disk
-        }
-    }
-    if (!foundDisk){
-    	fail("No disk found");
-    }
-    partitionStart = findPartition(activeDrive);
-    if (!partitionStart){
-    	fail("No partition found on the disk");
-    }
-    //readDiskSector(activeDrive, partitionStart, &infoFat);
-    //getMetadataFileFromDirectory(&infoFat, infoFat.rootCluster, 0, &entry);
-    //console_print(0, 0, entry.name);
-    //console_print_int_wrapper(entry.attr);
-    while(1);
-}

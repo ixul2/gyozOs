@@ -16,7 +16,7 @@ void boot_waitdisk() {
   do{
 	status = inb(0x1F7);
   }
-  while ((status & 0x80) || (!(status & 0x40)) || (!(status & 0x08)));
+  while ((status & 0x80) || (!(status & 0x40)));
 }
 
 int pingDisk(drive_info drive){ //Uses ATA to find out if hard drive exists
@@ -77,4 +77,31 @@ int findPartition(drive_info hardDrive){
 		}
 	}
 	return 0;
+}
+
+void setupDrive(){
+    int partitionStart, foundDisk;
+    drive_info activeDrive;
+    FAT32_Metadata infoFat;
+    FAT32_entry entry;
+    foundDisk = false;
+    for (int activeDriveIndex = 0; activeDriveIndex < 3; activeDriveIndex++){
+    	activeDrive = possibleDrives[activeDriveIndex];
+        if (pingDisk(activeDrive)){
+        	foundDisk = true;
+        	break; //we stop when we find the active disk
+        }
+    }
+    if (!foundDisk){
+    	fail("No disk found");
+    }
+    partitionStart = findPartition(activeDrive);
+    if (!partitionStart){
+    	fail("No partition found on the disk");
+    }
+    console_print_int_wrapper(100);
+    while(1);
+    //getMetadataFileFromDirectory(&infoFat, infoFat.rootCluster, 0, &entry);
+    //console_print(0, 0, entry.name);
+    
 }
