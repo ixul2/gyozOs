@@ -53,14 +53,19 @@ void init_framing(){
     for(uintptr_t i = 0; i < KERNEL_END; i+=PAGE_SIZE){
 	    set_frame(i/PAGE_SIZE);
     }
+    for(int i = 0; i<4; i++){
+        page_table_t* t = (page_table_t*) alloc_frame();
+        memset(t,0,sizeof(page_table_t));
+    }
+    while(1);
 }
 
 //PAGING
 
 static inline int pml4_index(uintptr_t addr) { return (addr >> 39) & 0x1FF; }
 static inline int pdpt_index(uintptr_t addr) { return (addr >> 30) & 0x1FF; }
-static inline int pd_index(uintptr_t addr)   { return (addr >> 21) & 0x1FF; }
-static inline int pt_index(uintptr_t addr)   { return (addr >> 12) & 0x1FF; }
+static inline int pd_index(uintptr_t addr) { return (addr >> 21) & 0x1FF; }
+static inline int pt_index(uintptr_t addr) { return (addr >> 12) & 0x1FF; }
 
 static page_t* get_page(pml4_t *pml4, uintptr_t addr, int create)
 {
@@ -76,7 +81,6 @@ static page_t* get_page(pml4_t *pml4, uintptr_t addr, int create)
 
         pdpt = (pdpt_t*)alloc_frame();
         memset(pdpt, 0, sizeof(pdpt_t));
-
         pml4->pages[pml4_index(addr)] =
             ((uintptr_t)pdpt & 0x000FFFFFFFFFF000ULL)
             | PAGE_PRESENT | PAGE_RW;
@@ -94,7 +98,6 @@ static page_t* get_page(pml4_t *pml4, uintptr_t addr, int create)
 
         pd = (pd_t*)alloc_frame();
         memset(pd, 0, sizeof(pd_t));
-
         pdpt->pages[pdpt_index(addr)] =
             ((uintptr_t)pd & 0x000FFFFFFFFFF000ULL)
             | PAGE_PRESENT | PAGE_RW;
@@ -109,10 +112,9 @@ static page_t* get_page(pml4_t *pml4, uintptr_t addr, int create)
     if(!(pde & PAGE_PRESENT))
     {
         if(!create) return NULL;
-
         pt = (pt_t*)alloc_frame();
         memset(pt, 0, sizeof(pt_t));
-
+        while(1);
         pd->pages[pd_index(addr)] =
             ((uintptr_t)pt & 0x000FFFFFFFFFF000ULL)
             | PAGE_PRESENT | PAGE_RW;
@@ -121,7 +123,6 @@ static page_t* get_page(pml4_t *pml4, uintptr_t addr, int create)
     {
         pt = (pt_t*)(pde & 0x000FFFFFFFFFF000ULL);
     }
-
     return &pt->pages[pt_index(addr)];
 }
 
@@ -140,7 +141,6 @@ void init_virtual_memory()
     memset(kernel_pml4, 0, sizeof(pml4_t));
     for(uintptr_t i = 0; i < KERNEL_END; i += PAGE_SIZE)
         map_page(kernel_pml4, i, i, PAGE_PRESENT | PAGE_RW);
-    while(1);
     asm volatile("mov %0, %%cr3" :: "r"(pml4_phys));
 }
 
