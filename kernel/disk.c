@@ -11,12 +11,12 @@ drive_info possibleDrives[] = { //primary master is always the boot disk here
 
 uint8_t diskBuffer[512];
 
-void boot_waitdisk() {
+void boot_waitdisk(int DRQ) {
   int status ;
   do{
 	status = inb(0x1F7);
   }
-  while ((status & 0x80) || (!(status & 0x40)));
+  while ((status & 0x80) || (!(status & 0x40)) || (DRQ && !(status & 0x08)));
 }
 
 int pingDisk(drive_info drive){ //Uses ATA to find out if hard drive exists
@@ -42,7 +42,7 @@ int pingDisk(drive_info drive){ //Uses ATA to find out if hard drive exists
 
 
 void readDiskSector(drive_info drive, uintptr_t ramAddr, uint32_t sectorNumber) {
-  boot_waitdisk();
+  boot_waitdisk(false);
   outb(drive.channel + 2, 1); // send `count = 1` as an ATA argument
   outb(drive.channel + 3 , sectorNumber); // send `src_sect`, the sector number
   outb(drive.channel + 4, sectorNumber >> 8);
@@ -50,12 +50,12 @@ void readDiskSector(drive_info drive, uintptr_t ramAddr, uint32_t sectorNumber) 
   outb(drive.channel + 6, (sectorNumber >> 24) | 0xE0 | (drive.drive & (1 << 4)));
   outb(drive.channel + 7, 0x20); // send the command: 0x20 = read sectors
 
-  boot_waitdisk();
+  boot_waitdisk(true);
   insl(drive.channel, (void *)ramAddr, 512 / 4); // read 128 words (or 512 bytes) from the disk
 }
 
 void writeDiskSector(drive_info drive, uintptr_t ramAddr, uint32_t sectorNumber) {
-  boot_waitdisk();
+  boot_waitdisk(false);
   outb(drive.channel + 2, 1); // send `count = 1` as an ATA argument
   outb(drive.channel + 3 , sectorNumber); // send `src_sect`, the sector number
   outb(drive.channel + 4, sectorNumber >> 8);
@@ -63,7 +63,7 @@ void writeDiskSector(drive_info drive, uintptr_t ramAddr, uint32_t sectorNumber)
   outb(drive.channel + 6, (sectorNumber >> 24) | 0xE0 | (drive.drive & (1 << 4)));
   outb(drive.channel + 7, 0x30); // send the command: 0x20 = write sectors
 
-  boot_waitdisk();
+  boot_waitdisk(true);
   outsl(drive.channel, (void *)ramAddr, 512 / 4); // read 128 words (or 512 bytes) from the disk
   
   outb(drive.channel + 7, 0xE7); //flush cache
@@ -99,9 +99,8 @@ void setupDrive(){
     if (!partitionStart){
     	fail("No partition found on the disk");
     }
-    console_print_int_wrapper(100);
+    readBootSector(activeDrive, partitionStart, &infoFat);
+    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &entry);
+    console_print_int_wrapper(entry.attr);
     while(1);
-    //getMetadataFileFromDirectory(&infoFat, infoFat.rootCluster, 0, &entry);
-    //console_print(0, 0, entry.name);
-    
 }
