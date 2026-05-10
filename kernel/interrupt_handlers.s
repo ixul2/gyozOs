@@ -25,5 +25,5 @@ keyboard_handler_wrapper:
     iretq
 
 print_int_asm:
-    call print_int_int
+    call console_print_int_wrapper
     iretq

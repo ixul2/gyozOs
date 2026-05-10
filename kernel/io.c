@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include "io.h"
 
-
+uint16_t *VGABuffer = (uint16_t*) 0xB8000;
 
 char lowercase_caracters_row0[] = "&e\"'(-e_ca)=";
 char lowercase_caracters_row1[] = "azertyuiop^$";
@@ -46,6 +46,12 @@ char keyboard_to_ascii(unsigned char c, int is_shifted){
     }
 }
 
+void cleanScreen(){
+	for (int i = 0; i < 80*25; i++){
+		VGABuffer[i] = 0x0F00;
+	}
+}
+
 void console_print(uint32_t l, uint32_t c, const char* s){
     volatile uint16_t* vmem = (uint16_t*) 0xB8000;
     uint32_t max = 80 * 25;
@@ -54,4 +60,25 @@ void console_print(uint32_t l, uint32_t c, const char* s){
         vmem[(pos + i) % max] = s[i] | 0x0F00 ;
     }
     return;
+}
+
+void console_print_int(uint32_t l, uint32_t c, unsigned int n){
+	char buffer[64];
+	buffer[63] = '\0';
+	int cursor = 62;
+	while(n || (cursor == 62)){
+		buffer[cursor--] = 48+(n%10);
+		n = n/10;
+	}
+	console_print(l, c, &buffer[cursor+1]);
+}
+
+void console_print_int_wrapper(unsigned int n){
+	console_print_int(0, 0, n);
+}
+
+void fail(char* errorMsg){
+	cleanScreen();
+	console_print(0, 0, errorMsg);
+	while(1);
 }

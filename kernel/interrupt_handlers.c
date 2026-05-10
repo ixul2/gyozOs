@@ -52,15 +52,3 @@ void setupInterrupts(){
 	__asm__ __volatile__("sti"); 
 }
 
-void print_int_int(unsigned int c){
-	char buffer[64];
-	buffer[63] = '\0';
-	int cursor = 62;
-	while(c){
-		buffer[cursor--] = 48+(c%10);
-		c = c/10;
-	}
-	console_print(0, 0, &buffer[cursor+1]);
-}
-
-
