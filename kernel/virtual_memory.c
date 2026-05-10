@@ -137,3 +137,8 @@ void init_virtual_memory()
     print((uintptr_t)kernel_pml4);
     asm volatile("mov %0, %%cr3" :: "r"(pml4_phys));
 }
+
+void pagefault_handler(uintptr_t addr){
+	
+}
+

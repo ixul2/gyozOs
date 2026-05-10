@@ -17,4 +17,5 @@ void console_print_int_wrapper(unsigned int n);
 char keyboard_to_ascii(unsigned char c, int is_shifted);
 void cleanScreen();
 void fail(char* errorMsg);
+
 void *memset(void *dst, int c, size_t n);

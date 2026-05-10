@@ -1,4 +1,4 @@
-.globl dummy_handler, keyboard_handler_wrapper, print_int_asm;
+.globl dummy_handler, keyboard_handler_wrapper, pagefault_handler_wrapper, print_int_asm;
 dummy_handler:
     iretq
     
@@ -25,5 +25,14 @@ keyboard_handler_wrapper:
     iretq
 
 print_int_asm:
-    call print_int_int
+    call console_print_int_wrapper
     iretq
+
+
+pagefault_handler_wrapper:
+    pushq %rdi 		    # calls keyboard_handler(keycode)
+    movq %cr2, %rdi
+    call pagefault_handler
+    pop %rdi
+    iretq
+

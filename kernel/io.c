@@ -83,7 +83,6 @@ void fail(char* errorMsg){
 	while(1);
 }
 
-
 void *memset(void *dst, int c, size_t n)
 {
     unsigned char *p = (unsigned char*)dst;
@@ -93,3 +92,4 @@ void *memset(void *dst, int c, size_t n)
 
     return dst;
 }
+
