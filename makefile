@@ -1,5 +1,5 @@
 all: bootable_disk
-	qemu-system-x86_64 -drive format=raw,file=bootable_disk -no-reboot -drive file=external_disk.img,format=raw
+	qemu-system-x86_64 -drive format=raw,file=bootable_disk -no-reboot -drive file=external_disk.img,format=raw -serial stdio
 
 bootable_disk: _obj/mkbootdisk kernel/_obj/all_kernel bootloader/_obj/all_boot
 	_obj/mkbootdisk bootloader/_obj/all_boot kernel/_obj/all_kernel > bootable_disk

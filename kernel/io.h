@@ -12,3 +12,7 @@ void cleanScreen();
 void fail(char* errorMsg);
 
 void *memset(void *dst, int c, size_t n);
+
+void serial_write_char(char c);
+void serial_write(const char* s);
+void serial_init(void);

@@ -37,7 +37,7 @@ static inline int find_free_frame(){
 uintptr_t alloc_frame(){
     int frame = find_free_frame();
     if(frame < 0){
-        fail("No free frame\n");
+        fail("No free frame!");
     }
     set_frame(frame);
     return (uintptr_t) frame * PAGE_SIZE;
@@ -49,15 +49,10 @@ void free_frame(uintptr_t addr){
 
 void init_framing(){
     frame_bitmap = (uint32_t*)BITMAP_LOCATION;
-    memset(frame_bitmap, 0, FRAME_BITMAP_SIZE);
+    memset(frame_bitmap, 0, FRAME_BITMAP_SIZE * sizeof(uint32_t));
     for(uintptr_t i = 0; i < KERNEL_END; i+=PAGE_SIZE){
 	    set_frame(i/PAGE_SIZE);
     }
-    for(int i = 0; i<4; i++){
-        page_table_t* t = (page_table_t*) alloc_frame();
-        memset(t,0,sizeof(page_table_t));
-    }
-    while(1);
 }
 
 //PAGING
@@ -75,73 +70,82 @@ static page_t* get_page(pml4_t *pml4, uintptr_t addr, int create)
 
     page_t pml4e = pml4->pages[pml4_index(addr)];
 
-    if(!(pml4e & PAGE_PRESENT))
+    if(!(pml4e & PTE_P))
     {
         if(!create) return NULL;
 
         pdpt = (pdpt_t*)alloc_frame();
-        memset(pdpt, 0, sizeof(pdpt_t));
         pml4->pages[pml4_index(addr)] =
-            ((uintptr_t)pdpt & 0x000FFFFFFFFFF000ULL)
-            | PAGE_PRESENT | PAGE_RW;
+            ((uintptr_t)pdpt & ~0xFFFUL)
+            | PTE_P | PTE_W | PTE_U;
+        memset(pdpt, 0, PAGE_SIZE);
     }
     else
     {
-        pdpt = (pdpt_t*)(pml4e & 0x000FFFFFFFFFF000ULL);
+        pdpt = (pdpt_t*)(pml4e & ~0xFFFUL);
     }
 
     page_t pdpte = pdpt->pages[pdpt_index(addr)];
 
-    if(!(pdpte & PAGE_PRESENT))
+    if(!(pdpte & PTE_P))
     {
         if(!create) return NULL;
 
         pd = (pd_t*)alloc_frame();
-        memset(pd, 0, sizeof(pd_t));
         pdpt->pages[pdpt_index(addr)] =
-            ((uintptr_t)pd & 0x000FFFFFFFFFF000ULL)
-            | PAGE_PRESENT | PAGE_RW;
+            ((uintptr_t)pd & ~0xFFFUL)
+            | PTE_P | PTE_W;
+        memset(pd, 0, PAGE_SIZE);
     }
     else
     {
-        pd = (pd_t*)(pdpte & 0x000FFFFFFFFFF000ULL);
+        pd = (pd_t*)(pdpte & ~0xFFFUL);
     }
 
     page_t pde = pd->pages[pd_index(addr)];
 
-    if(!(pde & PAGE_PRESENT))
+    if(!(pde & PTE_P))
     {
         if(!create) return NULL;
         pt = (pt_t*)alloc_frame();
-        memset(pt, 0, sizeof(pt_t));
-        while(1);
         pd->pages[pd_index(addr)] =
-            ((uintptr_t)pt & 0x000FFFFFFFFFF000ULL)
-            | PAGE_PRESENT | PAGE_RW;
+            ((uintptr_t)pt & ~0xFFFUL)
+            | PTE_P | PTE_W;
+        memset(pt, 0, PAGE_SIZE);
     }
     else
     {
-        pt = (pt_t*)(pde & 0x000FFFFFFFFFF000ULL);
+        pt = (pt_t*)(pde & ~0xFFFUL);
     }
     return &pt->pages[pt_index(addr)];
 }
 
 void map_page(pml4_t* pml4, uintptr_t virt, uintptr_t phys, uint64_t flags){
     page_t* page = get_page(pml4, virt, 1);
-    *page = (phys & 0x000FFFFFFFFFF000ULL) | flags | PAGE_PRESENT;
+    if(page == NULL) fail("C'est NULL");
+    *page = (phys & ~0xFFFUL) | flags | PTE_P;
 }
 
-static pml4_t *kernel_pml4;
+static page_table_t kernel_pagetables[5]
+    __attribute__((aligned(4096)));
+page_table_t *kernel_pagetable;
 
 void init_virtual_memory()
 {
-	init_framing();
-    uintptr_t pml4_phys = alloc_frame();
-    kernel_pml4 = (pml4_t*)pml4_phys;
-    memset(kernel_pml4, 0, sizeof(pml4_t));
-    for(uintptr_t i = 0; i < KERNEL_END; i += PAGE_SIZE)
-        map_page(kernel_pml4, i, i, PAGE_PRESENT | PAGE_RW);
-    asm volatile("mov %0, %%cr3" :: "r"(pml4_phys));
+    init_framing();
+    kernel_pagetable = &kernel_pagetables[0];
+    memset(kernel_pagetables, 0, sizeof(kernel_pagetables));
+    kernel_pagetables[0].pages[0] =
+        (page_t)&kernel_pagetables[1] | PTE_P | PTE_W | PTE_U;
+    kernel_pagetables[1].pages[0] =
+        (page_t)&kernel_pagetables[2] | PTE_P | PTE_W | PTE_U;
+    kernel_pagetables[2].pages[0] =
+        (page_t)&kernel_pagetables[3] | PTE_P | PTE_W | PTE_U;
+    kernel_pagetables[2].pages[1] =
+        (page_t)&kernel_pagetables[4] | PTE_P | PTE_W | PTE_U;
+    for(uintptr_t i = 0; i < MEM_SIZE; i += PAGE_SIZE)
+        map_page(kernel_pagetable, i, i, PTE_P | PTE_W |  PTE_U);
+    lcr3((uintptr_t) kernel_pagetable);
 }
 
 void pagefault_handler(uintptr_t addr){
