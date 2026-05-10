@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #define PAGE_DIRECTORY_SIZE 1024
 #define PAGE_TABLE_SIZE 1024
@@ -16,3 +17,5 @@ void console_print_int_wrapper(unsigned int n);
 char keyboard_to_ascii(unsigned char c, int is_shifted);
 void cleanScreen();
 void fail(char* errorMsg);
+
+void *memset(void *dst, int c, size_t n);

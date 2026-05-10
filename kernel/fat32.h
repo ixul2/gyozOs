@@ -11,6 +11,8 @@ struct FAT32_Metadata {
 	drive_info hardDrive;
 };
 
+
+void setupDrive(void);
 typedef struct FAT32_entry FAT32_entry;
 struct FAT32_entry{
 	char name[13];
