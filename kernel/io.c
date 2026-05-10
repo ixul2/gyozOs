@@ -59,7 +59,6 @@ void console_print(uint32_t l, uint32_t c, const char* s){
     for(uint32_t i = 0; s[i] != '\0'; i++){
         vmem[(pos + i) % max] = s[i] | 0x0F00 ;
     }
-    return;
 }
 
 void console_print_int(uint32_t l, uint32_t c, unsigned int n){

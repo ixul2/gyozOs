@@ -21,6 +21,5 @@ void keyboard_handler(unsigned char c){
 }
 
 int shell(){
-	print_int(10);
 	while(1);
 }
