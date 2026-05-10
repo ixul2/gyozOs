@@ -3,3 +3,5 @@ struct drive_info{
 	int channel;
 	int drive;
 };
+
+void setupDrive(void);
