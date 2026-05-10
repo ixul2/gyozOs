@@ -16,6 +16,9 @@
 #define PAGE_USER    (1ULL << 2)
 #define PAGE_NX      (1ULL << 63)
 
+#define KERNEL_VIRT_OFFSET 0xFFFFFFFF80000000ULL
+#define PHYS_TO_VIRT(x) ((void*)((uintptr_t)(x) + KERNEL_VIRT_OFFSET))
+
 typedef uint64_t page_t;
 
 typedef struct{
@@ -30,3 +33,4 @@ typedef page_table_t pt_t;
 
 
 void init_virtual_memory(void);
+void map_page(pml4_t* pml4, uintptr_t virt, uintptr_t phys, uint64_t flags);

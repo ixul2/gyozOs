@@ -53,11 +53,6 @@ void init_framing(){
     for(uintptr_t i = 0; i < KERNEL_END; i+=PAGE_SIZE){
 	    set_frame(i/PAGE_SIZE);
     }
-    for(int i = 0; i<4; i++){
-        page_table_t* t = (page_table_t*) alloc_frame();
-        memset(t,0,sizeof(page_table_t));
-    }
-    while(1);
 }
 
 //PAGING
