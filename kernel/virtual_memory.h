@@ -24,6 +24,9 @@
 #define PTE_D ((page_t)64)   // entry was Dirtied (written)
 #define PTE_PS ((page_t)128) // entry has a large Page Size
 
+#define KERNEL_VIRT_OFFSET 0xFFFFFFFF80000000ULL
+#define PHYS_TO_VIRT(x) ((void*)((uintptr_t)(x) + KERNEL_VIRT_OFFSET))
+
 typedef uint64_t page_t;
 
 typedef struct{
@@ -41,3 +44,4 @@ static inline void lcr3(uintptr_t val) {
 }
 
 void init_virtual_memory(void);
+void map_page(pml4_t* pml4, uintptr_t virt, uintptr_t phys, uint64_t flags);
