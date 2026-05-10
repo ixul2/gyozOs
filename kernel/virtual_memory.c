@@ -14,7 +14,7 @@ static inline void clear_frame(uint32_t frame){
 }
 
 static inline int is_frame_used(uint32_t frame){
-    frame_bitmap[frame/32] & (1U << (frame % 32));
+    return frame_bitmap[frame/32] & (1U << (frame % 32));
 }
 
 //Finds first free frame from the bitmap
@@ -22,7 +22,7 @@ static inline int is_frame_used(uint32_t frame){
 static inline int find_free_frame(){
     for(int i = 0; i<FRAME_BITMAP_SIZE; i++){
         if(frame_bitmap[i] != USED_FRAME){
-            for(int j = 0; j<8; j++){
+            for(int j = 0; j<32; j++){
                 if (!is_frame_used(32*i + j)){
                     return 32*i + j;
                 }
@@ -45,6 +45,14 @@ uintptr_t alloc_frame(){
 
 void free_frame(uintptr_t addr){
     clear_frame(addr/PAGE_SIZE);
+}
+
+void init_framing(){
+    frame_bitmap = (uint32_t*)BITMAP_LOCATION;
+    memset(frame_bitmap, 0, FRAME_BITMAP_SIZE);
+    for(uintptr_t i = 0; i < KERNEL_END; i+=PAGE_SIZE){
+	    set_frame(i/PAGE_SIZE);
+    }
 }
 
 //PAGING
@@ -119,22 +127,20 @@ static page_t* get_page(pml4_t *pml4, uintptr_t addr, int create)
 
 void map_page(pml4_t* pml4, uintptr_t virt, uintptr_t phys, uint64_t flags){
     page_t* page = get_page(pml4, virt, 1);
-    *page = (phys & 0x000FFFFFFFFFF000ULL) | flags;
+    *page = (phys & 0x000FFFFFFFFFF000ULL) | flags | PAGE_PRESENT;
 }
 
 static pml4_t *kernel_pml4;
 
 void init_virtual_memory()
 {
-    frame_bitmap = (uint32_t*)BITMAP_LOCATION;
-    memset(frame_bitmap, 0, (FRAME_NUMBER / 8));
+	init_framing();
     uintptr_t pml4_phys = alloc_frame();
     kernel_pml4 = (pml4_t*)pml4_phys;
     memset(kernel_pml4, 0, sizeof(pml4_t));
-    for(uintptr_t i = 0; i < KERNEL_END + PAGE_SIZE; i += PAGE_SIZE)
+    for(uintptr_t i = 0; i < KERNEL_END; i += PAGE_SIZE)
         map_page(kernel_pml4, i, i, PAGE_PRESENT | PAGE_RW);
     while(1);
-    print((uintptr_t)kernel_pml4);
     asm volatile("mov %0, %%cr3" :: "r"(pml4_phys));
 }
 

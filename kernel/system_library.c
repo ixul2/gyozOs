@@ -1,4 +1,4 @@
-#include <stdint.h>
+#include "system_library.h"
 int print_int(uint64_t n){
 	__asm__ volatile(
     "mov %0, %%rdi\n"

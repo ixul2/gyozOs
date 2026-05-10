@@ -6,11 +6,11 @@
 #include "fat32.h"
 
 uint32_t kernel(){
+    init_virtual_memory();
     cleanScreen();
     setupInterrupts();
     setupDrive();
-    init_virtual_memory();
-    while(1);
+
     shell();
 }
 
