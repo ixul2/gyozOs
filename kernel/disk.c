@@ -100,7 +100,6 @@ void setupDrive(){
     	fail("No partition found on the disk");
     }
     readBootSector(activeDrive, partitionStart, &infoFat);
-    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &entry);
-    console_print_int_wrapper(entry.attr);
+    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 1, &entry);
     while(1);
 }

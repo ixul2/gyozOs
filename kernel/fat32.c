@@ -4,7 +4,6 @@
 
 extern uint8_t diskBuffer[512];
 
-
 void readBootSector(drive_info hardDrive, uint32_t partitionAddr, FAT32_Metadata* infoFat){
 	int sectorsPerCluster, rootCluster, numberReservedSectors, sectorPerFat, nbFats;
 	readDiskSector(hardDrive, (uintptr_t) diskBuffer, partitionAddr); // we read the boot sector
@@ -25,7 +24,7 @@ void readBootSector(drive_info hardDrive, uint32_t partitionAddr, FAT32_Metadata
 	infoFat -> fatLBA = partitionAddr + numberReservedSectors; 
 	infoFat -> sectorPerFat = sectorPerFat;
 	infoFat -> nbFats = nbFats;
-	infoFat -> fstClusterLBA = infoFat -> rootCluster + sectorPerFat * nbFats;
+	infoFat -> fstClusterLBA = infoFat -> fatLBA + sectorPerFat * nbFats;
 	infoFat -> hardDrive = hardDrive;
 }
 
@@ -67,7 +66,8 @@ int nextCluster(FAT32_Metadata infoFat, uint32_t dirCluster){
 }
 
 void readFileName(char *fat32Name, char* filename){
-	int index = 7;
+	//if file name starts with \0
+	/*int index = 7;
 	while((fat32Name[index] = ' ') && (index >= 0)){ //we strip the trailing spaces
 		index--;
 	}
@@ -78,7 +78,11 @@ void readFileName(char *fat32Name, char* filename){
 	for (int i = 0; i < 3; i++){
 		filename[index+i+2] = fat32Name[8+i];
 	}
-	filename[index+5] = '\0';
+	filename[index+5] = '\0';*/
+	for(int i = 0; i < 11; i++){
+		filename[i] = fat32Name[i];
+	}
+	filename[11] = '\0';
 }
 
 void writeFileName(char *fat32Name, char* filename){
@@ -124,6 +128,10 @@ void getMetadataFileFromDirectory(FAT32_Metadata infoFat, uint32_t dirCluster, u
 	uint8_t *record;
 	int sector;
 	getToRightRecord(infoFat, dirCluster, index, &record, &sector);
+	//console_print_int(0, 0, sector);
+	//console_print_int(1, 0, (uint32_t) record);
+	readDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, 3624);
+	console_print_int(5, 0, diskBuffer[0x0B]);
 	readFileName(record, entry -> name);
 	entry -> attr = record[11];
 	entry -> fstCluster = *((uint16_t*)(record + 20)) << 16;
