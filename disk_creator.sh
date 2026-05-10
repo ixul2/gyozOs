@@ -1,30 +1,27 @@
-size=$1
-
-image=external_disk.img
-
-rm $image
-fallocate -l 10000000 $image
-fdisk $image << EOF
+dd if=/dev/zero of=external_disk.img bs=1M count=50
+sudo fdisk external_disk.img << EOF
+o
 n
 p
 1
-8192
+
+
+
 
 t
 c
 w
 EOF
-
-l=$(sudo losetup -f)
-echo $l
-
-sudo losetup $l -o 4194304 $image
-sudo mkfs.vfat $l -n RECOVERY
-sleep 1
-mkdir -p mnt/recovery
-sudo mount $l mnt/recovery
-python3 generate_files.py
+sudo losetup -d /dev/loop36
+echo "no problem"
+var=$(sudo losetup --find --show --partscan external_disk.img)
+sudo partprobe $var
+part="p1"
+file="$var$part"
+sudo mkfs.fat -F 32 $file
+mkdir -p /tmp/disk
+sudo mount $file /tmp/disk
+sudo python3 generate_files.py
 sync
-sudo umount mnt/recovery
-sudo losetup -d $l
-sleep 1
+sudo umount /tmp/disk
+sudo losetup -d $var
