@@ -14,10 +14,21 @@ static frame_info frames_info[FRAME_NUMBER]
 static inline int find_free_frame(){
     for(int i = 0; i<FRAME_NUMBER; i++){
         if(frames_info[i].owner == PO_FREE){
-            return i * PAGE_SIZE;
+            return i;
         }
     }
     return -1;
+}
+
+uintptr_t alloc_frame(int owner){
+    int frame = find_free_frame();
+    assert(frame >= 0, "No free frame available");
+    uintptr_t phys = (uintptr_t)(frame * PAGE_SIZE);
+    memset((void*) phys, 0, PAGE_SIZE);
+
+    frames_info[frame].owner = owner;
+    frames_info[frame].refcount++;
+    return phys;
 }
 
 //Allocate frame and returns its physical address
@@ -115,7 +126,7 @@ void map_page(pml4_t* pml4, uintptr_t virt, uintptr_t phys, uint64_t flags, page
 }
 
 static page_table_t kernel_pagetables[7]
-    __attribute__((aligned(4096)));
+    __attribute__((aligned(PAGE_SIZE)));
 page_table_t *kernel_pagetable;
 
 static inline void lcr3(uintptr_t val) {
@@ -139,8 +150,8 @@ void init_virtual_memory()
         kernel_pagetables[2].pages[i] =
             (page_t)&kernel_pagetables[i+3] | PTE_P | PTE_W | PTE_U;
     }
-    for(uintptr_t i = 1; i < MEM_SIZE; i += PAGE_SIZE)
-        map_page(kernel_pagetable, i, i, PTE_P | PTE_W | PTE_U, NULL);
+    for(uintptr_t i = 0x000000; i < MEM_SIZE; i += PAGE_SIZE)
+        map_page(kernel_pagetable, i, i, PTE_P | PTE_W , NULL);
     map_page(kernel_pagetable, (uintptr_t)0, (uintptr_t)0, PTE_P, NULL);
     change_pagetable(kernel_pagetable);
     init_framing();

@@ -1,5 +1,8 @@
 #include "virtual_memory.h"
 
+#define PROCINIT_ALLOW_PROGRAMMED_IO 0x01
+#define PROCINIT_DISABLE_INTERRUPTS 0x02
+
 typedef struct registers {
   uint64_t reg_rax;
   uint64_t reg_rcx;
@@ -44,7 +47,7 @@ typedef struct proc {
     int id;
     registers reg;
     p_state state;
-    page_table_t page_table;
+    page_table_t* page_table;
 } proc;
 
-#define PROC_NUMBER 8;
+#define PROC_NUMBER 8

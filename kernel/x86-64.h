@@ -25,11 +25,6 @@ typedef struct __attribute__((aligned(PAGESIZE))) x86_64_pagetable {
   x86_64_pageentry_t entry[NPAGETABLEENTRIES];
 } x86_64_pagetable;
 
-// Parts of a paged address: page index, page offset
-static inline int pageindex(uintptr_t addr, int level) {
-  assert(level >= 0 && level <= 3);
-  return (int)(addr >> (PAGEOFFBITS + (3 - level) * PAGEINDEXBITS)) & 0x1FF;
-}
 #define PAGEINDEX(addr, level) (pageindex((uintptr_t)(addr), (level)))
 #define L1PAGEINDEX(addr) (pageindex((uintptr_t)(addr), 0))
 #define L2PAGEINDEX(addr) (pageindex((uintptr_t)(addr), 1))

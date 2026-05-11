@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include "io.h"
 #include "lib.h"
-#define MEM_SIZE 0x600000
+#define MEM_SIZE 0x800000
 #define FRAME_NUMBER MEM_SIZE/PAGE_SIZE
 #define FRAME_BITMAP_SIZE FRAME_NUMBER
 #define BITMAP_LOCATION 0x100000
@@ -9,7 +9,7 @@
 #define PAGE_TABLE_SIZE 512
 #define PAGE_SIZE 4096
 #define KERNEL_START 0x400000
-#define KERNEL_END 0x600000
+#define KERNEL_END 0x500000
 
 // The physical address contained in a page table entry
 #define PTE_ADDR(pageentry) ((uintptr_t)(pageentry) & ~0xFFFUL)
@@ -25,6 +25,12 @@
 #define PTE_D ((page_t)64)   // entry was Dirtied (written)
 #define PTE_PS ((page_t)128) // entry has a large Page Size
 
+#define SEGSEL_KERN_CODE 0x8  // kernel code segment
+#define SEGSEL_APP_CODE 0x10  // application code segment
+#define SEGSEL_KERN_DATA 0x18 // kernel data segment
+#define SEGSEL_APP_DATA 0x20  // application data segment
+#define SEGSEL_TASKSTATE 0x28 // task state segment
+#define EFLAGS_IF 0x00000200
 
 #define IOPHYSMEM 0x000A0000
 #define EXTPHYSMEM 0x00100000
@@ -47,6 +53,10 @@ typedef page_table_t pml4_t;
 typedef page_table_t pdpt_t;
 typedef page_table_t pd_t;
 typedef page_table_t pt_t;
+
+extern page_table_t *kernel_pagetable;
+
+uintptr_t alloc_frame(int owner);
 
 void init_virtual_memory(void);
 void map_page(pml4_t* pml4, uintptr_t virt, uintptr_t phys, uint64_t flags, page_table_t* (*allocator)(void));
