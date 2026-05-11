@@ -59,8 +59,9 @@ int allocateFreeCluster(FAT32_Metadata infoFat, int lastCluster){
 	int cursor = 0;
 	while(indexSector < infoFat.fatLBA + infoFat.sectorPerFat){
 	    readDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, indexSector);
-        if (((uint32_t *)diskBuffer)[clusterIndex%16] == 0){
-            ((uint32_t *)diskBuffer)[clusterIndex%16] = 0x0FFFFFF8;
+	    
+        if (((uint32_t *)diskBuffer)[clusterIndex%128] == 0){            
+            ((uint32_t *)diskBuffer)[clusterIndex%128] = 0x0FFFFFFF;
             updateEveryFat(infoFat, indexSector);
             for (int i = 0; i < 512; i++){ 
             	diskBuffer[i] = 0;
@@ -77,7 +78,7 @@ int allocateFreeCluster(FAT32_Metadata infoFat, int lastCluster){
             return clusterIndex;
 	    } 
 	    clusterIndex++;
-	    if(clusterIndex % 16 == 0){
+	    if(clusterIndex % 128 == 0){
 	    	indexSector++;
 	    } 
 	}
@@ -132,10 +133,16 @@ void getToRightRecord(FAT32_Metadata infoFat, uint32_t dirCluster, uint32_t inde
 	*record = diskBuffer + (index%16)*32; //this is where the record is
 }
 
+int counter = -1;
+
 void getMetadataFileFromDirectory(FAT32_Metadata infoFat, uint32_t dirCluster, uint32_t index, FAT32_entry *entry){ 
 	uint8_t *record;
 	int sector;
 	getToRightRecord(infoFat, dirCluster, index, &record, &sector);
+	//for (int i = 0; i < 32; i++){
+	//  console_print_int(4+counter*5, i*4, record[i]);
+	//}
+	counter ++;
 	readFileName(record, entry -> name);
 	entry -> attr = record[11];
 	entry -> fstCluster = *((uint16_t*)(record + 20)) << 16;
@@ -202,8 +209,22 @@ void addFileToDirectory(FAT32_Metadata infoFat, uint32_t dirCluster, FAT32_entry
 		record[i] = entry.name[i];
 	}
 	record[11] = entry.attr;
+	//dummy date values
+	/*record[13] = 138;
+	record[14] = 241;
+	record[15] = 156;
+	record[16] = 170;
+	record[17] = 92;
+	record[18] = 170;
+	record[19] = 92;
+	
+	record[22] = 241;
+	record[23] = 156;
+	record[24] = 170;
+	record[25] = 92;*/
+
 	*((uint16_t*)(record + 20)) = (entry.fstCluster) >> 16;
-	*((uint16_t*)(record + 26)) = entry.fstCluster;
+	*((uint16_t*)(record + 26)) = entry.fstCluster % (1 << 16);
 	*((uint32_t*)(record + 28)) = (entry.size) % (1<<16);
 	writeDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, sector + indexSector);
 }
@@ -217,19 +238,29 @@ void mkdir(FAT32_Metadata infoFat, uint32_t dirCluster, char *directoryName){
 	entry.fstCluster = fstCluster;
 	entry.size = 0;
 	addFileToDirectory(infoFat, dirCluster, entry);
+	for (int i = 0; i < 11; i++){
+	  entry.name[i] = ' ';
+	}
+	entry.name[0] = '.';
+	addFileToDirectory(infoFat, fstCluster, entry); //create . directory
+	entry.name[1] = '.';
+	entry.fstCluster = dirCluster;
+	addFileToDirectory(infoFat, fstCluster, entry); //create .. directory
 }
 
 void writeFile(FAT32_Metadata infoFat, uint32_t dirCluster, char* filename, uint8_t* buffer, int bufferSize){
 	FAT32_entry entry;
 	int indexSector = 0, fileCluster, bufferIndex = 0;
-	entry.fstCluster = fileCluster = allocateFreeCluster(infoFat, 0);
+	fileCluster = allocateFreeCluster(infoFat, 0);
+	entry.fstCluster = fileCluster;
+	entry.size = bufferSize;
 	while(bufferSize){ //we create the file
 		int copySize, sector;
 		copySize = (bufferSize>=512) ? 512 : bufferSize;
 		sector = infoFat.fstClusterLBA + (infoFat.sectorPerCluster * (fileCluster-2)) + indexSector;
 		readDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, sector); //we copy the right sector
 		for (int i = 0; i < copySize; i++){
-			buffer[bufferIndex] = diskBuffer[i];
+			diskBuffer[i] = buffer[bufferIndex];
 			bufferIndex++;
 		}
 		writeDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, sector); //we put it in the hard drive
@@ -237,11 +268,12 @@ void writeFile(FAT32_Metadata infoFat, uint32_t dirCluster, char* filename, uint
 		indexSector++;
 		if (indexSector >=infoFat.sectorPerCluster){
 			fileCluster = nextCluster(infoFat, fileCluster);
+			indexSector = 0;
 		}
 	}
+	
 	writeFileName(entry.name, filename);
 	entry.attr = 0;
-	entry.size = bufferSize;
 	addFileToDirectory(infoFat, dirCluster, entry);
 }
 

@@ -134,12 +134,12 @@ void setupDrive(){
     readFile(infoFat, entry.fstCluster, content, entry.size);
     console_print(1, 0, content);*/
     
+
     /*int i = 0;
-    mkdir(infoFat, infoFat.rootCluster, "FILE4");
     FAT32_entry dir1;
-    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 4, &dir1);
+    //removeEntryFromDirectory(infoFat, infoFat.rootCluster, 2);
     while(1){
-    	getMetadataFileFromDirectory(infoFat, dir1.fstCluster, i, &entry); //it's a valid directory
+    	getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, i, &entry); //it's a valid directory
     	if (!isValidEntry(entry)){
     		break;
     	}
@@ -149,20 +149,50 @@ void setupDrive(){
     	i++;
     }*/
     
-    FAT32_entry dir1; //comment faire la commande ls
+    /*FAT32_entry dir1;
     int i = 0;
     getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &dir1);
+    char name[] = "TEST000.   ";
     for (int i = 0; i < 100; i++){
-    	mkdir(infoFat, dir1.fstCluster, "TEST.TXT");
+      name[4] = '0'+(i/100)%10;
+      name[5] = '0'+(i/10)%10;
+      name[6] = '0'+i%10;
+      mkdir(infoFat, dir1.fstCluster, name);
+      console_print_int(0, i*5, i);
     }
+    cleanScreen();
     while(1){
-    	getMetadataFileFromDirectory(infoFat, dir1.fstCluster, i, &entry); //it's a valid directory
+    	getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, i, &entry); //it's a valid directory
     	if (!isValidEntry(entry)){
     		break;
     	}
     	if (!isRemovedEntry(entry)){
     		console_print(0, i*10, entry.name);
+    		console_print_int(1, i*10, entry.fstCluster);
     	}
     	i++;
     }
+    */
+    /*
+    FAT32_entry dir1;
+    int i = 0;
+    char test[1000], read[1001];
+    for (int i = 0; i < 1000; i++){
+      test[i] = 'A'+i%15;
+    }
+    writeFile(infoFat, infoFat.rootCluster, "fichier.txt", test, 1000);
+    while(1){
+    	getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, i, &entry); //it's a valid directory
+    	if (!isValidEntry(entry)){
+    		break;
+    	}
+    	if (!isRemovedEntry(entry)){
+    		console_print(i, 0, entry.name);
+    	}
+    	i++;
+    }
+    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 3, &entry);
+    readFile(infoFat, entry.fstCluster, read, 1000);
+    read[1000] = '\0';
+    console_print(10, 0, read);*/
 }

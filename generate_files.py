@@ -7,3 +7,5 @@ mkdir("/tmp/disk/DIR2")
 for i in range(100):
 	with open(f"/tmp/disk/DIR2/FILE{i}", "w") as file:
 		file.write(str(i))
+
+mkdir("/tmp/disk/DIR3")
