@@ -56,30 +56,30 @@ void updateEveryFat(FAT32_Metadata infoFat, int sectorFirstFat){
 int allocateFreeCluster(FAT32_Metadata infoFat, int lastCluster){
 	int indexSector = infoFat.fatLBA;
 	int clusterIndex = 2;
+	int cursor = 0;
 	while(indexSector < infoFat.fatLBA + infoFat.sectorPerFat){
 	    readDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, indexSector);
-	    while(clusterIndex%16 != 0){
-	        if (((uint32_t *)diskBuffer)[clusterIndex%16] == 0){
-	            ((uint32_t *)diskBuffer)[clusterIndex%16] = 0x0FFFFFF8;
-	            updateEveryFat(infoFat, indexSector);
-	            for (int i = 0; i < 512; i++){ 
-	            	diskBuffer[i] = 0;
-	            }
-	            for (int i = 0; i < infoFat.sectorPerCluster; i++){ //we wipe the whole cluster
-	            	int sectorNumber = infoFat.fstClusterLBA + (infoFat.sectorPerCluster * (clusterIndex-2)) + i;
-	            	writeDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, sectorNumber);
-	            }
-	            
-	            if (lastCluster){
-			        readDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, infoFat.fatLBA + (lastCluster >> 7));
-			        *(((uint32_t *) diskBuffer) + (lastCluster%128)) = clusterIndex;
-			        updateEveryFat(infoFat, infoFat.fatLBA + (lastCluster >> 7));
-	            }
-	            return clusterIndex;
-	        }
-	        clusterIndex++;
-	    }
-	    indexSector++;
+        if (((uint32_t *)diskBuffer)[clusterIndex%16] == 0){
+            ((uint32_t *)diskBuffer)[clusterIndex%16] = 0x0FFFFFF8;
+            updateEveryFat(infoFat, indexSector);
+            for (int i = 0; i < 512; i++){ 
+            	diskBuffer[i] = 0;
+            }
+            for (int i = 0; i < infoFat.sectorPerCluster; i++){ //we wipe the whole new cluster
+            	int sectorNumber = infoFat.fstClusterLBA + (infoFat.sectorPerCluster * (clusterIndex-2)) + i;
+            	writeDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, sectorNumber);
+            }
+            if (lastCluster){
+		        readDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, infoFat.fatLBA + (lastCluster >> 7));
+		        *(((uint32_t *) diskBuffer) + (lastCluster%128)) = clusterIndex;
+		        updateEveryFat(infoFat, infoFat.fatLBA + (lastCluster >> 7));
+            }
+            return clusterIndex;
+	    } 
+	    clusterIndex++;
+	    if(clusterIndex % 16 == 0){
+	    	indexSector++;
+	    } 
 	}
 	fail("no new cluster can be allocated");
 }
@@ -89,7 +89,7 @@ int nextCluster(FAT32_Metadata infoFat, uint32_t dirCluster){
 	readDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, infoFat.fatLBA + (dirCluster >> 7));
 	newDirCluster = *(((uint32_t *) diskBuffer) + (dirCluster%128));
 	if (newDirCluster >= 0x0FFFFFF8){ //if it's the last cluster we allocate a new one
-        return allocateFreeCluster(infoFat, dirCluster);
+        	return allocateFreeCluster(infoFat, dirCluster);
 	}
 	return newDirCluster;
 }
@@ -165,6 +165,7 @@ void writeFileName(char *fat32Name, char* filename){
 	int index = 0;
 	while ((index < 8) && (filename[index] != '.')){
 		fat32Name[index] = filename[index];
+		index++;
 	}
 	for (int i = index; i < 8; i++){
 		fat32Name[i] = ' ';
@@ -176,11 +177,11 @@ void writeFileName(char *fat32Name, char* filename){
 
 
 void addFileToDirectory(FAT32_Metadata infoFat, uint32_t dirCluster, FAT32_entry entry){ 
-	int sector, indexSector = 0, bufferIndex = 0, indexRecord = 0;
+	int sector, indexSector = 0, indexRecord = 0;
 	uint8_t *record;
+	sector = infoFat.fstClusterLBA + (infoFat.sectorPerCluster * (dirCluster-2));
+	readDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, sector + indexSector);
 	while(1){
-		sector = infoFat.fstClusterLBA + (infoFat.sectorPerCluster * (dirCluster-2)) + indexSector;
-		readDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, sector);
 		if (*((uint8_t *) diskBuffer + 32*indexRecord) == 0){ //if we have a free space
 			break;
 		}
@@ -188,19 +189,23 @@ void addFileToDirectory(FAT32_Metadata infoFat, uint32_t dirCluster, FAT32_entry
 		if (indexRecord >= 16){
 			indexRecord = 0;
 			indexSector++;
-			if (indexSector >=infoFat.sectorPerCluster){
+			if (indexSector >= infoFat.sectorPerCluster){
 				indexSector = 0;
 				dirCluster = nextCluster(infoFat, dirCluster);
 			}
+			sector = infoFat.fstClusterLBA + (infoFat.sectorPerCluster * (dirCluster-2));
+			readDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, sector + indexSector);
 		}
 	}
 	record = (uint8_t *) diskBuffer + 32*indexRecord;
-	writeFileName(record, entry.name);
+	for (int i = 0; i < 11; i++){
+		record[i] = entry.name[i];
+	}
 	record[11] = entry.attr;
 	*((uint16_t*)(record + 20)) = (entry.fstCluster) >> 16;
 	*((uint16_t*)(record + 26)) = entry.fstCluster;
 	*((uint32_t*)(record + 28)) = (entry.size) % (1<<16);
-	updateEveryFat(infoFat, sector);
+	writeDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, sector + indexSector);
 }
 
 void mkdir(FAT32_Metadata infoFat, uint32_t dirCluster, char *directoryName){
