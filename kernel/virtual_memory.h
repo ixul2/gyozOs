@@ -1,14 +1,15 @@
 #include <stdint.h>
 #include "io.h"
+#include "lib.h"
 #define MEM_SIZE 0x600000
 #define FRAME_NUMBER MEM_SIZE/PAGE_SIZE
-#define FRAME_BITMAP_SIZE FRAME_NUMBER/32
+#define FRAME_BITMAP_SIZE FRAME_NUMBER
 #define BITMAP_LOCATION 0x100000
 #define USED_FRAME 0xFFFFFFFF
 #define PAGE_TABLE_SIZE 512
 #define PAGE_SIZE 4096
-#define KERNEL_START 0x600000
-#define KERNEL_END 0x100000
+#define KERNEL_START 0x400000
+#define KERNEL_END 0x600000
 
 // The physical address contained in a page table entry
 #define PTE_ADDR(pageentry) ((uintptr_t)(pageentry) & ~0xFFFUL)
@@ -24,8 +25,17 @@
 #define PTE_D ((page_t)64)   // entry was Dirtied (written)
 #define PTE_PS ((page_t)128) // entry has a large Page Size
 
-#define KERNEL_VIRT_OFFSET 0xFFFFFFFF80000000ULL
-#define PHYS_TO_VIRT(x) ((void*)((uintptr_t)(x) + KERNEL_VIRT_OFFSET))
+
+#define IOPHYSMEM 0x000A0000
+#define EXTPHYSMEM 0x00100000
+#define PO_FREE 0
+#define PO_RESERVED (-1)
+#define PO_KERNEL (-2)
+
+typedef struct frame_info {
+  int8_t owner;
+  int8_t refcount;
+} frame_info;
 
 typedef uint64_t page_t;
 
@@ -38,10 +48,7 @@ typedef page_table_t pdpt_t;
 typedef page_table_t pd_t;
 typedef page_table_t pt_t;
 
-static inline void lcr3(uintptr_t val) {
-  asm volatile("" : : : "memory");
-  asm volatile("movq %0,%%cr3" : : "r"(val) : "memory");
-}
-
 void init_virtual_memory(void);
-void map_page(pml4_t* pml4, uintptr_t virt, uintptr_t phys, uint64_t flags);
+void map_page(pml4_t* pml4, uintptr_t virt, uintptr_t phys, uint64_t flags, page_table_t* (*allocator)(void));
+void change_pagetable(page_table_t* pt);
+void pagefault_handler(uintptr_t addr);

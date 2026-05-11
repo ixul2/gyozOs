@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "io.h"
+#include "lib.h"
 #include "interrupt_handlers.h"
 #include "virtual_memory.h"
 #include "shell.h"
