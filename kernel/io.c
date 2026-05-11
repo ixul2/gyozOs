@@ -11,7 +11,7 @@ char lowercase_caracters_row3[] = "wxcvbn,;:!";
 char uppercase_caracters_row0[] = "1234567890°+";
 char uppercase_caracters_row1[] = "AZERTYUIOP¨£";
 char uppercase_caracters_row2[] = "QSDFGHJKLM%µ";
-char uppercase_caracters_row3[] = "wxcvbn?./§";
+char uppercase_caracters_row3[] = "WXCVBN?./§";
 
 char keyboard_to_ascii(unsigned char c, int is_shifted){
     if ((0x02 <= c) && (c <= 0x0B)){
@@ -36,7 +36,7 @@ char keyboard_to_ascii(unsigned char c, int is_shifted){
     	if (is_shifted)
     		return lowercase_caracters_row3[c-0x2C];
    
-        return lowercase_caracters_row3[c-0x2C];
+        return uppercase_caracters_row3[c-0x2C];
     }
     else if (c == 0x39){
     	return ' ';
@@ -76,20 +76,10 @@ void console_print_int_wrapper(unsigned int n){
 	console_print_int(0, 0, n);
 }
 
-void fail(char* errorMsg){
+void fail(const char* errorMsg){
 	cleanScreen();
 	console_print(0, 0, errorMsg);
 	while(1);
-}
-
-void *memset(void *dst, int c, size_t n)
-{
-    unsigned char *p = (unsigned char*)dst;
-
-    for(size_t i = 0; i < n; i++)
-        p[i] = (unsigned char)c;
-
-    return dst;
 }
 
 static inline void outb(uint16_t port, uint8_t value) {
@@ -113,4 +103,10 @@ void serial_init() {
     outb(0x3F8 + 3, 0x03);
     outb(0x3F8 + 2, 0xC7);
     outb(0x3F8 + 4, 0x0B);
+}
+
+void assert(int b, const char* msg){
+    if(b == 0){
+        fail(msg);
+    }
 }

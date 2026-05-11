@@ -15,7 +15,7 @@ kernel/_obj/assembly_%.o : kernel/%.s
 	mkdir -p kernel/_obj
 	as -o $@ $<
 
-kernel/_obj/%.o : kernel/%.c
+kernel/_obj/%.o : kernel/%.c kernel/%.h
 	mkdir -p kernel/_obj
 	gcc -ffreestanding -c -o $@ $< 
 
