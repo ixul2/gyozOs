@@ -160,7 +160,6 @@ void setupDrive(){
       mkdir(infoFat, dir1.fstCluster, name);
       console_print_int(0, i*5, i);
     }
-    cleanScreen();
     while(1){
     	getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, i, &entry); //it's a valid directory
     	if (!isValidEntry(entry)){
