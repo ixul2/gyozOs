@@ -100,23 +100,21 @@ void setupDrive(){
     	fail("No partition found on the disk");
     }
     readBootSector(activeDrive, partitionStart, &infoFat);
-    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &entry); //it's a valid directory
-    /*console_print_int(0, 0, isValidEntry(entry));
+    /*getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &entry); //it's a valid directory
+    console_print_int(0, 0, isValidEntry(entry));
     console_print_int(1, 0, isDirectory(entry));*/
     
     
     /*char content[100];
     getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &entry);
     getMetadataFileFromDirectory(infoFat, entry.fstCluster, 2, &entry);
-    console_print_int(0, 0, entry.size);
     readFile(infoFat, entry.fstCluster, content, entry.size);
     console_print(1, 0, content);*/
-    
+
     
     /*FAT32_entry dir1; //comment faire la commande ls
     int i = 0;
     getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &dir1);
-    removeEntryFromDirectory(infoFat, dir1.fstCluster, 1);
     while(1){
     	getMetadataFileFromDirectory(infoFat, dir1.fstCluster, i, &entry); //it's a valid directory
     	if (!isValidEntry(entry)){
@@ -128,15 +126,15 @@ void setupDrive(){
     	i++;
     }*/
     
-    /*
-    char content[20000];
+    
+    /*char content[20000];
     getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 1, &entry);
-    getMetadataFileFromDirectory(infoFat, entry.fstCluster, 3, &entry);
+    getMetadataFileFromDirectory(infoFat, entry.fstCluster, 50, &entry);
     console_print_int(0, 0, entry.size);
     readFile(infoFat, entry.fstCluster, content, entry.size);
     console_print(1, 0, content);*/
     
-    int i = 0;
+    /*int i = 0;
     mkdir(infoFat, infoFat.rootCluster, "FILE4");
     FAT32_entry dir1;
     getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 4, &dir1);
@@ -147,6 +145,23 @@ void setupDrive(){
     	}
     	if (!isRemovedEntry(entry)){
     		console_print(i, 0, entry.name);
+    	}
+    	i++;
+    }*/
+    
+    FAT32_entry dir1; //comment faire la commande ls
+    int i = 0;
+    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &dir1);
+    for (int i = 0; i < 100; i++){
+    	mkdir(infoFat, dir1.fstCluster, "TEST.TXT");
+    }
+    while(1){
+    	getMetadataFileFromDirectory(infoFat, dir1.fstCluster, i, &entry); //it's a valid directory
+    	if (!isValidEntry(entry)){
+    		break;
+    	}
+    	if (!isRemovedEntry(entry)){
+    		console_print(0, i*10, entry.name);
     	}
     	i++;
     }
