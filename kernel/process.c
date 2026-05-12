@@ -17,5 +17,5 @@ void init_process(proc* p, int flags){
         p->p_registers.reg_rflags &= ~EFLAGS_IF;
     }*/
     p->page_table = kernel_pagetable;
-    pageinfo[(uintptr_t)kernel_pagetable/PAGE_SIZE].refcount++;
+    frames_info[(uintptr_t)kernel_pagetable/PAGE_SIZE].refcount++;
 }

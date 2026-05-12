@@ -16,7 +16,7 @@ void keyboard_handler(unsigned char c){
     	cursor = cursor + 80 - (cursor%80);
     }
     else if (ascii_code){
-        VGABuffer[cursor++] = 0x0F00+ascii_code;
+        VGABuffer[cursor++] = 0x0F00 | ascii_code;
     }
 }
 

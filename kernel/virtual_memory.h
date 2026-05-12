@@ -55,6 +55,7 @@ typedef page_table_t pd_t;
 typedef page_table_t pt_t;
 
 extern page_table_t *kernel_pagetable;
+static frame_info frames_info[FRAME_NUMBER];
 
 uintptr_t alloc_frame(int owner);
 

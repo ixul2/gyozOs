@@ -34,9 +34,9 @@ char keyboard_to_ascii(unsigned char c, int is_shifted){
     } 
     else if ((0x2C <= c) && (c <= 0x33)){
     	if (is_shifted)
-    		return lowercase_caracters_row3[c-0x2C];
+    		return uppercase_caracters_row3[c-0x2C];
    
-        return uppercase_caracters_row3[c-0x2C];
+        return lowercase_caracters_row3[c-0x2C];
     }
     else if (c == 0x39){
     	return ' ';

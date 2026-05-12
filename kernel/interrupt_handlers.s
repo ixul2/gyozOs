@@ -30,7 +30,7 @@ print_int_asm:
 
 
 pagefault_handler_wrapper:
-    pushq %rdi 		    # calls keyboard_handler(keycode)
+    pushq %rdi
     movq %cr2, %rdi
     call pagefault_handler
     pop %rdi
