@@ -1,19 +1,17 @@
 #include <stdint.h>
 #include "io.h"
 #include "lib.h"
-#define MEM_SIZE 0x800000
+#define MEM_SIZE 0x400000
 #define FRAME_NUMBER MEM_SIZE/PAGE_SIZE
-#define FRAME_BITMAP_SIZE FRAME_NUMBER
-#define BITMAP_LOCATION 0x100000
-#define USED_FRAME 0xFFFFFFFF
 #define PAGE_TABLE_SIZE 512
 #define PAGE_SIZE 4096
-#define KERNEL_START 0x400000
-#define KERNEL_END 0x500000
+#define KERNEL_START 0x40000
+#define KERNEL_STACK_TOP 0x80000
+#define PROC_START_ADDR 0x100000
+#define PROC_SIZE 0X40000
 
 // The physical address contained in a page table entry
 #define PTE_ADDR(pageentry) ((uintptr_t)(pageentry) & ~0xFFFUL)
-
 // Page table entry flags
 #define PTE_FLAGS(pageentry) ((page_t)(pageentry) & 0xFFFU)
 // - Permission flags: define whether page is accessible
@@ -37,6 +35,12 @@
 #define PO_FREE 0
 #define PO_RESERVED (-1)
 #define PO_KERNEL (-2)
+
+// Pseudo-descriptors used for LGDT, LLDT, and LIDT instructions
+typedef struct __attribute__((packed, aligned(2))) pseudodescriptor_t{
+  uint16_t pseudod_limit; // Limit
+  uint64_t pseudod_base;  // Base address
+} pseudodescriptor_t;
 
 typedef struct frame_info {
   int8_t owner;

@@ -19,3 +19,8 @@ void init_process(proc* p, int flags){
     p->page_table = kernel_pagetable;
     frames_info[(uintptr_t)kernel_pagetable/PAGE_SIZE].refcount++;
 }
+
+void load_process(proc* p,int program){
+    uintptr_t va = PROC_START_ADDR + p->id * PROC_SIZE;
+    
+}

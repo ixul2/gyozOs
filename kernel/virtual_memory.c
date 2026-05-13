@@ -34,11 +34,13 @@ uintptr_t alloc_frame(int owner){
 //Allocate frame and returns its physical address
 
 void init_framing(){
+    extern char end[];
+
     for(int frame = 0; frame<FRAME_NUMBER; frame+=1){
         uintptr_t addr = frame * PAGE_SIZE;
         if(physical_memory_isreserved(addr)){
             frames_info[frame].owner = PO_RESERVED;
-        } else if(addr >= KERNEL_START && addr < KERNEL_END){
+        } else if(addr >= KERNEL_START && addr < (uintptr_t)end){
             frames_info[frame].owner = PO_KERNEL;
         } else {
             frames_info[frame].owner = PO_FREE;
@@ -125,7 +127,7 @@ void map_page(pml4_t* pml4, uintptr_t virt, uintptr_t phys, uint64_t flags, page
     *page = (phys & ~0xFFFUL) | flags;
 }
 
-static page_table_t kernel_pagetables[7]
+static page_table_t kernel_pagetables[5]
     __attribute__((aligned(PAGE_SIZE)));
 page_table_t *kernel_pagetable;
 
@@ -146,7 +148,7 @@ void init_virtual_memory()
         (page_t)&kernel_pagetables[1] | PTE_P | PTE_W | PTE_U;
     kernel_pagetables[1].pages[0] =
         (page_t)&kernel_pagetables[2] | PTE_P | PTE_W | PTE_U;
-    for(int i = 0; i<4; i++){
+    for(int i = 0; i<2; i++){
         kernel_pagetables[2].pages[i] =
             (page_t)&kernel_pagetables[i+3] | PTE_P | PTE_W | PTE_U;
     }

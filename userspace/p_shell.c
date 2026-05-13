@@ -1,11 +1,11 @@
+#include <string.h>
 #include "syscalls.h"
-#include "lib.h"
 
 char cmd[64];
 
 void process_main(){
     while(1){
-        sys_write("> ");
+        /*sys_write("> ");
         sys_get_input(cmd);
 
         if (!strcmp(cmd, "ls")){
@@ -16,6 +16,6 @@ void process_main(){
             sys_clean();
         } else {
             sys_write("Unknown command\n");
-        }
+        }*/
     }
 }
