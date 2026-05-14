@@ -5,7 +5,8 @@ run:
 		-drive format=raw,file=bootable_disk \
 		-no-reboot \
 		-drive file=external_disk.img,format=raw \
-		-serial stdio
+		-serial stdio \
+		-d int,cpu_reset,guest_errors
 
 
 # =========================================================
@@ -34,7 +35,7 @@ kernel_as_files := $(wildcard kernel/*.s)
 kernel_obj_as_files := $(patsubst kernel/%.s,kernel/_obj/assembly_%.o,$(kernel_as_files))
 
 
-kernel/_obj/all_kernel: $(kernel_obj_c_files) $(kernel_obj_as_files) $()
+kernel/_obj/all_kernel: $(kernel_obj_c_files) $(kernel_obj_as_files) userspace/_obj/p_shell_embedded.o
 	ld -T kernel/link/kernel.ld -e kernel -o $@ $^
 
 
@@ -87,7 +88,7 @@ bootloader/_obj/bootloader.o: bootloader/boot.c
 
 
 # =========================================================
-# Userspace process : p_shell
+# Userspace : p_shell
 # =========================================================
 
 userspace/_obj/p_shell.o: userspace/p_shell.c
@@ -98,8 +99,7 @@ userspace/_obj/p_shell.o: userspace/p_shell.c
 		-fno-pic \
 		-m64 \
 		-c \
-		-o $@ \
-		$<
+		-o $@ $<
 
 
 userspace/_obj/p_shell.bin: userspace/_obj/p_shell.o
@@ -109,6 +109,17 @@ userspace/_obj/p_shell.bin: userspace/_obj/p_shell.o
 		-o $@ \
 		$^
 
+
+# =========================================================
+# Embed p_shell.bin into kernel
+# =========================================================
+
+userspace/_obj/p_shell_embedded.o: userspace/_obj/p_shell.bin
+	ld \
+		-r \
+		-b binary \
+		-o $@ \
+		$<
 
 # =========================================================
 # Tools

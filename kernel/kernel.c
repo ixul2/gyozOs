@@ -2,9 +2,9 @@
 #include "io.h"
 #include "lib.h"
 #include "interrupt_handlers.h"
-#include "virtual_memory.h"
 #include "shell.h"
 #include "fat32.h"
+#include "process.h"
 
 uint32_t kernel(){
     serial_init();
@@ -12,6 +12,7 @@ uint32_t kernel(){
     init_virtual_memory();
     setupInterrupts();
     setupDrive();
-    shell();
+    serial_write("===========================TEST============================\n");
+    init_processes();
 }
 

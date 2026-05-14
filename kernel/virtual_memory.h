@@ -61,9 +61,10 @@ typedef page_table_t pt_t;
 extern page_table_t *kernel_pagetable;
 static frame_info frames_info[FRAME_NUMBER];
 
-uintptr_t alloc_frame(int owner);
+uintptr_t alloc_frame(int8_t owner);
 
 void init_virtual_memory(void);
 void map_page(pml4_t* pml4, uintptr_t virt, uintptr_t phys, uint64_t flags, page_table_t* (*allocator)(void));
 void change_pagetable(page_table_t* pt);
 void pagefault_handler(uintptr_t addr);
+int assign_physical_page(uintptr_t addr, int8_t owner);

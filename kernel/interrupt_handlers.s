@@ -36,3 +36,25 @@ pagefault_handler_wrapper:
     pop %rdi
     iretq
 
+    .globl exception_return
+exception_return:
+    movq %rdi, %rsp
+    popq %rax
+    popq %rcx
+    popq %rdx
+    popq %rbx
+    popq %rbp
+    popq %rsi
+    popq %rdi
+    popq %r8
+    popq %r9
+    popq %r10
+    popq %r11
+    popq %r12
+    popq %r13
+    popq %r14
+    popq %r15
+    popq %fs
+    popq %gs
+    addq $16, %rsp
+    iretq

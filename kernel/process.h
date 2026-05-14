@@ -41,13 +41,18 @@ typedef struct registers {
 #define P_BLOCKED (-1)
 #define P_BROKEN (-2)
 
-typedef int p_state;
+typedef int8_t p_state;
 
 typedef struct proc {
-    int id;
+    int8_t id;
     registers reg;
     p_state state;
     page_table_t* page_table;
 } proc;
 
 #define PROC_NUMBER 8
+
+void exception_return(registers *reg) __attribute__((noreturn));
+void run(proc *p);
+void init_process(proc* p);
+void init_processes(void);

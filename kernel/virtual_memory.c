@@ -20,7 +20,7 @@ static inline int find_free_frame(){
     return -1;
 }
 
-uintptr_t alloc_frame(int owner){
+uintptr_t alloc_frame(int8_t owner){
     int frame = find_free_frame();
     assert(frame >= 0, "No free frame available");
     uintptr_t phys = (uintptr_t)(frame * PAGE_SIZE);
@@ -29,6 +29,18 @@ uintptr_t alloc_frame(int owner){
     frames_info[frame].owner = owner;
     frames_info[frame].refcount++;
     return phys;
+}
+
+int assign_physical_page(uintptr_t addr, int8_t owner) {
+  if ((addr & 0xFFF) != 0 || addr >= MEM_SIZE ||
+      frames_info[addr/PAGE_SIZE].refcount != 0) {
+    return -1;
+  } else {
+    frames_info[addr/PAGE_SIZE].refcount = 1;
+    frames_info[addr/PAGE_SIZE].owner = owner;
+    memset((void *)addr, 0, PAGE_SIZE);
+    return 0;
+  }
 }
 
 //Allocate frame and returns its physical address
