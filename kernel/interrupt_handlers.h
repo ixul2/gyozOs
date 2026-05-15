@@ -1,4 +1,9 @@
-void syscall_handler(char c);
+#include <stdint.h>
+#include "x86-64.h"
+#include "io.h"
+#ifndef PROCESS
+#include "process.h"
+#endif
 
 void setupInterrupts(void);
 typedef struct IDT_entry IDT_entry;

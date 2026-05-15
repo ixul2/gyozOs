@@ -1,8 +1,7 @@
 #include "syscalls.h"
 
 void process_main(){
-    sys_write('O');
-    sys_write('K');
+    sys_call();
     while (1) {}
         /*sys_write("> ");
         sys_get_input(cmd);

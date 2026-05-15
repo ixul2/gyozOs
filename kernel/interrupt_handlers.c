@@ -1,7 +1,5 @@
-#include <stdint.h>
-#include "x86-64.h"
-#include "io.h"
 #include "interrupt_handlers.h"
+
 extern void dummy_handler(void);
 extern void keyboard_handler_wrapper(void);
 extern void pagefault_handler_wrapper(void);
@@ -56,8 +54,6 @@ void setupInterrupts(){
 	__asm__ __volatile__("sti"); 
 }
 
-void syscall_handler(char c) {
-    uint16_t *VGABuffer = (uint16_t*) 0xB8000;
-    static int pos = 0;
-    VGABuffer[pos++] = 0x0F00 | c;
+void syscall_handler(registers_t *reg) {
+	return;
 }

@@ -1,3 +1,6 @@
+#ifndef _VIRTUAL_MEMORY_H
+#define _VIRTUAL_MEMORY_H
+
 #include <stdint.h>
 #include "io.h"
 #include "lib.h"
@@ -57,3 +60,5 @@ void map_page(pml4_t* pml4, uintptr_t virt, uintptr_t phys, uint64_t flags, page
 void change_pagetable(page_table_t* pt);
 void pagefault_handler(uintptr_t addr);
 int assign_physical_page(uintptr_t addr, int8_t owner);
+
+#endif

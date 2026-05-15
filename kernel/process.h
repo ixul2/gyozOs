@@ -1,11 +1,12 @@
-#ifndef VIRTUAL_MEMORY
+#ifndef _PROCESS_H_
+#define _PROCESS_H_
+
 #include "virtual_memory.h"
-#endif
 
 #define PROCINIT_ALLOW_PROGRAMMED_IO 0x01
 #define PROCINIT_DISABLE_INTERRUPTS 0x02
 
-typedef struct registers {
+typedef struct {
   uint64_t reg_rax;
   uint64_t reg_rcx;
   uint64_t reg_rdx;
@@ -35,7 +36,7 @@ typedef struct registers {
   uint64_t reg_rsp;
   uint16_t reg_ss;
   uint16_t reg_padding3[3];
-} registers;
+} registers_t;
 
 
 #define P_FREE 0
@@ -47,15 +48,17 @@ typedef int8_t p_state;
 
 typedef struct proc {
     int8_t id;
-    registers reg;
+    registers_t reg;
     p_state state;
     page_table_t* page_table;
 } proc;
 
 #define PROC_NUMBER 8
 
-void exception_return(registers *reg) __attribute__((noreturn));
+void exception_return(registers_t *reg) __attribute__((noreturn));
 void run(proc *p);
 void init_process(proc* p);
 void init_processes(void);
 void launch_shell(void);
+
+#endif

@@ -37,6 +37,47 @@ pagefault_handler_wrapper:
     iretq
 
 syscall_handler_wrapper:
+    # Save general purpose registers (order must match struct)
+    pushq %gs
+    pushq %fs
+    pushq %r15
+    pushq %r14
+    pushq %r13
+    pushq %r12
+    pushq %r11
+    pushq %r10
+    pushq %r9
+    pushq %r8
+    pushq %rdi
+    pushq %rsi
+    pushq %rbp
+    pushq %rbx
+    pushq %rdx
+    pushq %rcx
+    pushq %rax
+
+    movq %rsp, %rdi
+    call syscall_handler
+
+    popq %rax
+    popq %rcx
+    popq %rdx
+    popq %rbx
+    popq %rbp
+    popq %rsi
+    popq %rdi
+    popq %r8
+    popq %r9
+    popq %r10
+    popq %r11
+    popq %r12
+    popq %r13
+    popq %r14
+    popq %r15
+    popq %fs
+    popq %gs
+
+    # Now RSP points to the RIP field (the first of the five frame fields)
     iretq
 
 exception_return:
@@ -60,7 +101,3 @@ exception_return:
     popq %gs
     addq $16, %rsp
     iretq
-
-.section .data
-pos:
-    .long 0

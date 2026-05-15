@@ -4,6 +4,9 @@ void sys_get_input(const char*);
 static inline void sys_write(char c) {
     asm volatile ("int $0x80" : : "D"(c));
 }
+static inline void sys_call(void){
+    asm volatile ("int $0x80");
+}
 void sys_allocpage(uintptr_t);
 void sys_ls(void);
 void sys_cd(const char*);
