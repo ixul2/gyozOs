@@ -387,14 +387,20 @@ typedef struct __attribute__((packed, aligned(2))) x86_64_pseudodescriptor {
 } x86_64_pseudodescriptor;
 
 // Task state structure defines kernel stack for interrupt handlers
-typedef struct __attribute__((packed, aligned(8))) x86_64_taskstate {
-  uint32_t ts_reserved0;
-  uint64_t ts_rsp[3];
-  uint64_t ts_ist[7];
-  uint64_t ts_reserved1;
-  uint16_t ts_reserved2;
-  uint16_t ts_iomap_base;
-} x86_64_taskstate;
+typedef struct tss {
+    uint32_t reserved0;          // offset 0
+    uint64_t rsp0;               // offset 4
+    uint64_t rsp1;               // offset 12
+    uint64_t rsp2;               // offset 20
+    uint64_t reserved1;          // offset 28
+    uint64_t ist[7];             // offset 36
+    uint64_t reserved2;          // offset 92
+    uint16_t reserved3;          // offset 100
+    uint16_t iopb_offset;        // offset 102
+} __attribute__((packed, aligned(8))) tss;
+
+// Verify size at compile time (optional)
+_Static_assert(sizeof(tss) == 104, "TSS size must be 104 bytes");
 
 // Gate descriptor structure defines interrupt handlers
 typedef struct x86_64_gatedescriptor {

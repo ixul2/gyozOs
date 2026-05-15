@@ -35,15 +35,47 @@ void init_process(proc* p){
     frames_info[(uintptr_t)kernel_pagetable/PAGE_SIZE].refcount++;
 }
 
-void load_process(proc* p, int program){
-    uintptr_t va = PROC_START_ADDR + p->id * PROC_SIZE;
-    uintptr_t stack = PROC_START_ADDR + (p->id + 1) * PROC_SIZE - PAGE_SIZE;
+void load_process(proc* p, int program) {
+    // program argument ignored – always load the embedded binary
+    (void)program;
 
-    for(uintptr_t addr = va; addr <= stack; addr += PAGE_SIZE){
-        assign_physical_page(addr, p->id);
-        map_page(p->page_table, addr, addr, PTE_P | PTE_W | PTE_U, NULL);
+    size_t bin_size = (size_t)(_binary_userspace__obj_p_shell_bin_end -
+                               _binary_userspace__obj_p_shell_bin_start);
+    size_t pages_needed = (bin_size + PAGE_SIZE - 1) / PAGE_SIZE;
+
+    // 3. User virtual base for this process
+    uintptr_t user_base = PROC_START_ADDR + p->id * PROC_SIZE;
+
+    // 4. Allocate and map pages for the binary
+    for (size_t i = 0; i < pages_needed; i++) {
+        map_page(p->page_table,
+                 user_base + i * PAGE_SIZE,
+                 user_base + i * PAGE_SIZE,
+                 PTE_P | PTE_W | PTE_U,
+                 NULL);
     }
-    p->reg.reg_rip = 0x100000;
+
+    // 5. Copy the embedded binary into user space
+    memcpy((void*)user_base, _binary_userspace__obj_p_shell_bin_start, bin_size);
+
+    // 6. Zero out the remainder of the last page (clears any uninitialised data)
+    size_t last_page_off = bin_size & (PAGE_SIZE - 1);
+    if (last_page_off != 0)
+        memset((void*)(user_base + bin_size), 0, PAGE_SIZE - last_page_off);
+
+    // 7. Map a user stack at the top of the region
+    map_page(p->page_table,
+             user_base + PROC_SIZE - PAGE_SIZE,
+             user_base + PROC_SIZE - PAGE_SIZE,
+             PTE_P | PTE_W | PTE_U,
+             NULL);
+    memset((void*)(user_base + PROC_SIZE - PAGE_SIZE), 0, PAGE_SIZE);
+
+    // 8. Set up initial CPU context
+    p->reg.reg_rip = user_base;                      // entry point (0x100000 + offset)
+    p->reg.reg_rsp = user_base + PROC_SIZE - 8;      // stack grows down
+
+    p->state = P_RUNNABLE;
 }
 
 void init_processes(){

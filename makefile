@@ -47,6 +47,9 @@ kernel/_obj/assembly_%.o: kernel/%.s
 kernel/_obj/%.o: kernel/%.c kernel/%.h
 	mkdir -p kernel/_obj
 	gcc \
+		-mno-red-zone \
+		-mno-mmx \
+		-mno-sse \
 		-ffreestanding \
 		-fno-pie \
 		-fno-pic \

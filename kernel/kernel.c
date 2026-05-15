@@ -4,6 +4,7 @@
 #include "interrupt_handlers.h"
 #include "shell.h"
 #include "fat32.h"
+#include "virtual_memory.h"
 #include "process.h"
 
 uint32_t kernel(){
@@ -13,6 +14,7 @@ uint32_t kernel(){
     setupInterrupts();
     setupDrive();
     serial_write("===========================TEST============================\n");
-    init_processes();
+    launch_shell();
+    while(1);
 }
 

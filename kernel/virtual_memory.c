@@ -1,5 +1,59 @@
 #include "virtual_memory.h"
 
+// Segments
+static uint64_t segments[7];
+
+static void set_app_segment(uint64_t *segment, uint64_t type, int dpl) {
+  *segment = type | X86SEG_S                     // code/data segment
+             | ((uint64_t)dpl << 45) | X86SEG_P; // segment present
+}
+
+static void set_sys_segment(uint64_t *segment, uint64_t type, int dpl,
+                            uintptr_t addr, size_t size) {
+  segment[0] = ((addr & 0x0000000000FFFFFFUL) << 16) |
+               ((addr & 0x00000000FF000000UL) << 32) |
+               ((size - 1) & 0x0FFFFUL) | (((size - 1) & 0xF0000UL) << 48) |
+               type | ((uint64_t)dpl << 45) | X86SEG_P; // segment present
+  segment[1] = addr >> 32;
+}
+
+static tss kernel_task_descriptor;
+
+void segments_init(void) {
+  // Segments for kernel & user code & data
+  // The privilege level, which can be 0 or 3, differentiates between
+  // kernel and user code. (Data segments are unused in WeensyOS.)
+  segments[0] = 0;
+  set_app_segment(&segments[SEGSEL_KERN_CODE >> 3], X86SEG_X | X86SEG_L, 0);
+  set_app_segment(&segments[SEGSEL_APP_CODE >> 3], X86SEG_X | X86SEG_L, 3);
+  set_app_segment(&segments[SEGSEL_KERN_DATA >> 3], X86SEG_W, 0);
+  set_app_segment(&segments[SEGSEL_APP_DATA >> 3], X86SEG_W, 3);
+  set_sys_segment(&segments[SEGSEL_TASKSTATE >> 3], X86SEG_TSS, 0,
+                  (uintptr_t)&kernel_task_descriptor,
+                  sizeof(kernel_task_descriptor));
+
+  x86_64_pseudodescriptor gdt;
+  gdt.pseudod_limit = sizeof(segments) - 1;
+  gdt.pseudod_base = (uint64_t)segments;
+
+  // Kernel task descriptor lets us receive interrupts
+  memset(&kernel_task_descriptor, 0, sizeof(kernel_task_descriptor));
+  kernel_task_descriptor.rsp0 = KERNEL_STACK_TOP;
+  kernel_task_descriptor.iopb_offset = sizeof(kernel_task_descriptor);
+
+  // Reload segment pointers
+  asm volatile("lgdt %0\n\t"
+               "ltr %1\n\t"
+               :
+               : "m"(gdt), "r"((uint16_t)SEGSEL_TASKSTATE)
+               : "memory");
+
+  // Set up control registers: check alignment
+  uint32_t cr0 = rcr0();
+  cr0 |= CR0_PE | CR0_PG | CR0_WP | CR0_AM | CR0_MP | CR0_NE;
+  lcr0(cr0);
+}
+
 //FRAME MANAGEMENT
 
 int physical_memory_isreserved(uintptr_t pa) {
@@ -143,17 +197,13 @@ static page_table_t kernel_pagetables[5]
     __attribute__((aligned(PAGE_SIZE)));
 page_table_t *kernel_pagetable;
 
-static inline void lcr3(uintptr_t val) {
-  asm volatile("" : : : "memory");
-  asm volatile("movq %0,%%cr3" : : "r"(val) : "memory");
-}
-
 void change_pagetable(page_table_t *page_table){
     lcr3((uintptr_t) page_table);
 }
 
 void init_virtual_memory()
 {
+    segments_init();
     kernel_pagetable = &kernel_pagetables[0];
     memset(kernel_pagetables, 0, sizeof(kernel_pagetables));
     kernel_pagetables[0].pages[0] =
@@ -172,6 +222,6 @@ void init_virtual_memory()
 }
 
 void pagefault_handler(uintptr_t addr){
-	
+    fail("PAGE FAULT");
 }
 

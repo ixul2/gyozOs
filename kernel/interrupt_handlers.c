@@ -5,6 +5,7 @@
 extern void dummy_handler(void);
 extern void keyboard_handler_wrapper(void);
 extern void pagefault_handler_wrapper(void);
+extern void syscall_handler_wrapper(void);
 extern void print_int_asm(void);
 
 IDT_entry IDTable[256];
@@ -24,6 +25,7 @@ void setupIDTable(IDT_ptr *idt_ptr){
 	setupIDTEntry(&IDTable[14], (uint64_t) pagefault_handler_wrapper, 0); //pagefault
 	setupIDTEntry(&IDTable[33], (uint64_t) keyboard_handler_wrapper, 0); //keyboard
 	setupIDTEntry(&IDTable[48], (uint64_t) print_int_asm, 3); //custom interrupts
+	setupIDTEntry(&IDTable[0x80], (uint64_t) syscall_handler_wrapper, 3); // system calls
 	idt_ptr->base = (uint64_t) IDTable;
 	idt_ptr->limit = sizeof(IDTable)-1;
 }
@@ -54,3 +56,8 @@ void setupInterrupts(){
 	__asm__ __volatile__("sti"); 
 }
 
+void syscall_handler(char c) {
+    uint16_t *VGABuffer = (uint16_t*) 0xB8000;
+    static int pos = 0;
+    VGABuffer[pos++] = 0x0F00 | c;
+}

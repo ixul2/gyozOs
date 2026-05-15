@@ -1,7 +1,9 @@
 #include <stdint.h>
 #include "io.h"
 #include "lib.h"
-#define MEM_SIZE 0x400000
+#include "x86-64.h"
+#define VIRTUAL_MEMORY
+#define MEM_SIZE 0x200000
 #define FRAME_NUMBER MEM_SIZE/PAGE_SIZE
 #define PAGE_TABLE_SIZE 512
 #define PAGE_SIZE 4096
@@ -9,19 +11,6 @@
 #define KERNEL_STACK_TOP 0x80000
 #define PROC_START_ADDR 0x100000
 #define PROC_SIZE 0X40000
-
-// The physical address contained in a page table entry
-#define PTE_ADDR(pageentry) ((uintptr_t)(pageentry) & ~0xFFFUL)
-// Page table entry flags
-#define PTE_FLAGS(pageentry) ((page_t)(pageentry) & 0xFFFU)
-// - Permission flags: define whether page is accessible
-#define PTE_P ((page_t)1) // entry is Present
-#define PTE_W ((page_t)2) // entry is Writeable
-#define PTE_U ((page_t)4) // entry is User-accessible
-// - Accessed flags: automatically turned on by processor
-#define PTE_A ((page_t)32)   // entry was Accessed (read/written)
-#define PTE_D ((page_t)64)   // entry was Dirtied (written)
-#define PTE_PS ((page_t)128) // entry has a large Page Size
 
 #define SEGSEL_KERN_CODE 0x8  // kernel code segment
 #define SEGSEL_APP_CODE 0x10  // application code segment

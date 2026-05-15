@@ -1,4 +1,6 @@
+#ifndef VIRTUAL_MEMORY
 #include "virtual_memory.h"
+#endif
 
 #define PROCINIT_ALLOW_PROGRAMMED_IO 0x01
 #define PROCINIT_DISABLE_INTERRUPTS 0x02
@@ -56,3 +58,4 @@ void exception_return(registers *reg) __attribute__((noreturn));
 void run(proc *p);
 void init_process(proc* p);
 void init_processes(void);
+void launch_shell(void);

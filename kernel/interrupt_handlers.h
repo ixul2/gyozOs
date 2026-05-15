@@ -1,3 +1,5 @@
+void syscall_handler(char c);
+
 void setupInterrupts(void);
 typedef struct IDT_entry IDT_entry;
 struct __attribute__((packed)) IDT_entry {

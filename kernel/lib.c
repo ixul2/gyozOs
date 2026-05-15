@@ -9,3 +9,11 @@ void *memset(void *dst, int c, size_t n)
 
     return dst;
 }
+
+void *memcpy(void *dst, const void *src, size_t n) {
+  const char *s = (const char *)src;
+  for (char *d = (char *)dst; n > 0; --n, ++s, ++d) {
+    *d = *s;
+  }
+  return dst;
+}

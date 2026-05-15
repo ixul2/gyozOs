@@ -1,4 +1,4 @@
-.globl dummy_handler, keyboard_handler_wrapper, pagefault_handler_wrapper, print_int_asm;
+.globl dummy_handler, keyboard_handler_wrapper, pagefault_handler_wrapper, syscall_handler_wrapper, print_int_asm, exception_return;
 dummy_handler:
     iretq
     
@@ -36,7 +36,9 @@ pagefault_handler_wrapper:
     pop %rdi
     iretq
 
-    .globl exception_return
+syscall_handler_wrapper:
+    iretq
+
 exception_return:
     movq %rdi, %rsp
     popq %rax
@@ -58,3 +60,7 @@ exception_return:
     popq %gs
     addq $16, %rsp
     iretq
+
+.section .data
+pos:
+    .long 0
