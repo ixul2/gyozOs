@@ -6,7 +6,6 @@ extern uint8_t _binary_userspace__obj_p_shell_bin_end[];
 static proc procs[PROC_NUMBER];
 proc* current;
 
-
 typedef struct ramimage {
     void *begin;
     void *end;

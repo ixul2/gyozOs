@@ -1,5 +1,5 @@
-#ifndef _VIRTUAL_MEMORY_H
-#define _VIRTUAL_MEMORY_H
+#ifndef _VIRTUAL_MEMORY_H_
+#define _VIRTUAL_MEMORY_H_
 
 #include <stdint.h>
 #include "io.h"

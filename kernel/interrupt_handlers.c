@@ -1,5 +1,6 @@
 #include "interrupt_handlers.h"
 
+extern proc* current;
 extern void dummy_handler(void);
 extern void keyboard_handler_wrapper(void);
 extern void pagefault_handler_wrapper(void);
@@ -55,5 +56,9 @@ void setupInterrupts(){
 }
 
 void syscall_handler(registers_t *reg) {
+	current->reg = *reg;
+	uint16_t *VGABuffer = (uint16_t*) 0xB8000;
+	VGABuffer[0] = 0x0F00 | 'C';
+	run(current);
 	return;
 }

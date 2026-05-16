@@ -1,6 +1,5 @@
-#include <stdint.h>
 #include "fat32.h"
-#include "io.h"
+
 
 extern uint8_t diskBuffer[512];
 

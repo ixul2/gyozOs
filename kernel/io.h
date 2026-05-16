@@ -1,3 +1,6 @@
+#ifndef _IO_H_
+#define _IO_H_
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -14,3 +17,5 @@ void serial_write_char(char c);
 void serial_write(const char* s);
 void serial_init(void);
 void assert(int b, const char* msg);
+
+#endif

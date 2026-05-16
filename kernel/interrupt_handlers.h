@@ -1,9 +1,10 @@
+#ifndef _INTERRUPT_HANDLER_H_
+#define _INTERRUPT_HANDLER_H_
+
 #include <stdint.h>
 #include "x86-64.h"
 #include "io.h"
-#ifndef PROCESS
 #include "process.h"
-#endif
 
 void setupInterrupts(void);
 typedef struct IDT_entry IDT_entry;
@@ -24,3 +25,5 @@ struct IDT_ptr
     uint16_t limit;
     uint64_t base;
 } __attribute__((packed));
+
+#endif

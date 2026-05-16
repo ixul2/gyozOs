@@ -1,4 +1,9 @@
+#ifndef _FAT32_H_
+#define _FAT32_H_
+
 #include "disk.h"
+#include "io.h"
+#include <stdint.h>
 
 typedef struct FAT32_Metadata FAT32_Metadata;
 struct FAT32_Metadata {
@@ -29,3 +34,5 @@ void setupDrive();
 void readBootSector(drive_info hardDrive, uint32_t partitionAddr, FAT32_Metadata* infoFat);
 void getMetadataFileFromDirectory(FAT32_Metadata infoFat, uint32_t dirCluster, uint32_t index, FAT32_entry *entry);
 void mkdir(FAT32_Metadata infoFat, uint32_t dirCluster, char *directoryName);
+
+#endif
