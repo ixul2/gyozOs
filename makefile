@@ -109,9 +109,9 @@ userspace/_obj/p_shell.bin: userspace/_obj/p_shell.o
 	ld \
 		-T userspace/link/p_shell.ld \
 		--oformat=binary \
+		-e process_main \
 		-o $@ \
 		$^
-
 
 # =========================================================
 # Embed p_shell.bin into kernel
@@ -121,6 +121,7 @@ userspace/_obj/p_shell_embedded.o: userspace/_obj/p_shell.bin
 	ld \
 		-r \
 		-b binary \
+		-e process_main \
 		-o $@ \
 		$<
 

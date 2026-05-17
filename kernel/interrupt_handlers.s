@@ -1,4 +1,4 @@
-.globl dummy_handler, keyboard_handler_wrapper, pagefault_handler_wrapper, syscall_handler_wrapper, print_int_asm, exception_return;
+.globl dummy_handler, keyboard_handler_wrapper, pagefault_handler_wrapper, sys_getchar_handler_wrapper, print_int_asm, exception_return, sys_write_char_handler_wrapper, sys_write_handler_wrapper, sys_ls_handler_wrapper;
 dummy_handler:
     iretq
     
@@ -36,9 +36,27 @@ pagefault_handler_wrapper:
     pop %rdi
     iretq
 
-syscall_handler_wrapper:
+sys_getchar_handler_wrapper:
     pushq $0
     pushq $0x80
+    jmp generic_exception_handler
+
+sys_write_char_handler_wrapper:
+    pushq $0
+    pushq $0x81
+    jmp generic_exception_handler
+
+sys_write_handler_wrapper:
+    pushq $0
+    pushq $0x82
+    jmp generic_exception_handler
+
+sys_ls_handler_wrapper:
+    pushq $0
+    pushq $0x83
+    jmp generic_exception_handler
+
+generic_exception_handler:
     pushq %gs
     pushq %fs
     pushq %r15
@@ -57,7 +75,7 @@ syscall_handler_wrapper:
     pushq %rcx
     pushq %rax
     movq %rsp, %rdi
-    call syscall_handler
+    call exception
 
 exception_return:
     movq %rdi, %rsp

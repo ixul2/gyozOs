@@ -17,3 +17,11 @@ void *memcpy(void *dst, const void *src, size_t n) {
   }
   return dst;
 }
+
+int strlen(char* s){
+  int n = 0;
+  while(s[n] != '\0'){
+    n++;
+  }
+  return n;
+}

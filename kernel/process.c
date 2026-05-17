@@ -96,8 +96,6 @@ void run(proc *p) {
   // Load the process's current pagetable.
   change_pagetable(p->page_table);
 
-  // This function is defined in k-exception.S. It restores the process's
-  // registers then jumps back to user mode.
   exception_return(&p->reg);
 
 spinloop:

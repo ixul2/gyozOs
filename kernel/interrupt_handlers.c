@@ -6,6 +6,13 @@ extern void keyboard_handler_wrapper(void);
 extern void pagefault_handler_wrapper(void);
 extern void syscall_handler_wrapper(void);
 extern void print_int_asm(void);
+extern void sys_getchar_handler_wrapper(void);
+extern void sys_write_char_handler_wrapper(void);
+extern void sys_write_handler_wrapper(void);
+extern void sys_ls_handler_wrapper(void);
+extern volatile int key_ready;
+extern char last_key;
+extern void ls(void);
 
 IDT_entry IDTable[256];
 
@@ -24,7 +31,10 @@ void setupIDTable(IDT_ptr *idt_ptr){
 	setupIDTEntry(&IDTable[14], (uint64_t) pagefault_handler_wrapper, 0); //pagefault
 	setupIDTEntry(&IDTable[33], (uint64_t) keyboard_handler_wrapper, 0); //keyboard
 	setupIDTEntry(&IDTable[48], (uint64_t) print_int_asm, 3); //custom interrupts
-	setupIDTEntry(&IDTable[0x80], (uint64_t) syscall_handler_wrapper, 3); // system calls
+	setupIDTEntry(&IDTable[SYS_GETCHAR_INT], (uint64_t) sys_getchar_handler_wrapper, 3);
+	setupIDTEntry(&IDTable[SYS_WRITE_CHAR_INT], (uint64_t) sys_write_char_handler_wrapper, 3);
+	setupIDTEntry(&IDTable[SYS_WRITE_INT], (uint64_t) sys_write_handler_wrapper, 3);
+	setupIDTEntry(&IDTable[SYS_LS_INT], (uint64_t) sys_ls_handler_wrapper, 3);
 	idt_ptr->base = (uint64_t) IDTable;
 	idt_ptr->limit = sizeof(IDTable)-1;
 }
@@ -55,10 +65,48 @@ void setupInterrupts(){
 	__asm__ __volatile__("sti"); 
 }
 
-void syscall_handler(registers_t *reg) {
-	current->reg = *reg;
-	uint16_t *VGABuffer = (uint16_t*) 0xB8000;
-	VGABuffer[0] = 0x0F00 | 'C';
+void sys_write_char_handler(registers_t *reg) {
+	shell_print_char((char)reg->reg_rdi);
 	run(current);
-	return;
+}
+
+void sys_write_handler(registers_t *reg) {
+	shell_print((char*)reg->reg_rdi);
+	run(current);
+}
+
+void sys_getchar_handler(registers_t *reg) {
+	while(!key_ready){
+		asm volatile("sti; hlt; cli" ::: "memory");
+	}
+	key_ready = 0;
+	current->reg.reg_rax = last_key;
+	run(current);
+}
+
+void sys_ls_handler(){
+	ls();
+	run(current);
+}
+
+void exception(registers_t* reg){
+	current->reg = *reg;
+	change_pagetable(kernel_pagetable);
+	switch(reg->reg_intno){
+		case SYS_GETCHAR_INT:
+			sys_getchar_handler(reg);
+			break;
+
+		case SYS_WRITE_CHAR_INT:
+			sys_write_char_handler(reg);
+			break;
+
+		case SYS_WRITE_INT:
+			sys_write_handler(reg);
+			break;
+		
+		case SYS_LS_INT:
+			sys_ls_handler();
+			break;
+	}
 }

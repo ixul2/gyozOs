@@ -79,119 +79,121 @@ int findPartition(drive_info hardDrive){
 	return 0;
 }
 
+int partitionStart, foundDisk;
+drive_info activeDrive;
+FAT32_Metadata infoFat;
+FAT32_entry entry;
+
 void setupDrive(){
-    int partitionStart, foundDisk;
-    drive_info activeDrive;
-    FAT32_Metadata infoFat;
-    FAT32_entry entry;
-    foundDisk = false;
-    for (int activeDriveIndex = 0; activeDriveIndex < 3; activeDriveIndex++){
-    	activeDrive = possibleDrives[activeDriveIndex];
-        if (pingDisk(activeDrive)){
-        	foundDisk = true;
-        	break; //we stop when we find the active disk
-        }
-    }
-    if (!foundDisk){
-    	fail("No disk found");
-    }
-    partitionStart = findPartition(activeDrive);
-    if (!partitionStart){
-    	fail("No partition found on the disk");
-    }
-    readBootSector(activeDrive, partitionStart, &infoFat);
-    /*getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &entry); //it's a valid directory
-    console_print_int(0, 0, isValidEntry(entry));
-    console_print_int(1, 0, isDirectory(entry));*/
-    
-    
-    /*char content[100];
-    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &entry);
-    getMetadataFileFromDirectory(infoFat, entry.fstCluster, 2, &entry);
-    readFile(infoFat, entry.fstCluster, content, entry.size);
-    console_print(1, 0, content);*/
+  foundDisk = false;
+  for (int activeDriveIndex = 0; activeDriveIndex < 3; activeDriveIndex++){
+    activeDrive = possibleDrives[activeDriveIndex];
+      if (pingDisk(activeDrive)){
+        foundDisk = true;
+        break; //we stop when we find the active disk
+      }
+  }
+  if (!foundDisk){
+    fail("No disk found");
+  }
+  partitionStart = findPartition(activeDrive);
+  if (!partitionStart){
+    fail("No partition found on the disk");
+  }
+  readBootSector(activeDrive, partitionStart, &infoFat);
+  /*getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &entry); //it's a valid directory
+  console_print_int(0, 0, isValidEntry(entry));
+  console_print_int(1, 0, isDirectory(entry));*/
+  
+  
+  /*char content[100];
+  getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &entry);
+  getMetadataFileFromDirectory(infoFat, entry.fstCluster, 2, &entry);
+  readFile(infoFat, entry.fstCluster, content, entry.size);
+  console_print(1, 0, content);*/
+  
+  /*char content[20000];
+  getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 1, &entry);
+  getMetadataFileFromDirectory(infoFat, entry.fstCluster, 50, &entry);
+  console_print_int(0, 0, entry.size);
+  readFile(infoFat, entry.fstCluster, content, entry.size);
+  console_print(1, 0, content);*/
+  
 
-    
-    /*FAT32_entry dir1; //comment faire la commande ls
-    int i = 0;
-    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &dir1);
-    while(1){
-    	getMetadataFileFromDirectory(infoFat, dir1.fstCluster, i, &entry); //it's a valid directory
-    	if (!isValidEntry(entry)){
-    		break;
-    	}
-    	if (!isRemovedEntry(entry)){
-    		console_print(i, 0, entry.name);
-    	}
-    	i++;
-    }*/
-    
-    
-    /*char content[20000];
-    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 1, &entry);
-    getMetadataFileFromDirectory(infoFat, entry.fstCluster, 50, &entry);
-    console_print_int(0, 0, entry.size);
-    readFile(infoFat, entry.fstCluster, content, entry.size);
-    console_print(1, 0, content);*/
-    
+  /*int i = 0;
+  FAT32_entry dir1;
+  //removeEntryFromDirectory(infoFat, infoFat.rootCluster, 2);
+  while(1){
+    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, i, &entry); //it's a valid directory
+    if (!isValidEntry(entry)){
+      break;
+    }
+    if (!isRemovedEntry(entry)){
+      console_print(i, 0, entry.name);
+    }
+    i++;
+  }*/
+  
+  /*FAT32_entry dir1;
+  int i = 0;
+  getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &dir1);
+  char name[] = "TEST000.   ";
+  for (int i = 0; i < 100; i++){
+    name[4] = '0'+(i/100)%10;
+    name[5] = '0'+(i/10)%10;
+    name[6] = '0'+i%10;
+    mkdir(infoFat, dir1.fstCluster, name);
+    console_print_int(0, i*5, i);
+  }
+  while(1){
+    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, i, &entry); //it's a valid directory
+    if (!isValidEntry(entry)){
+      break;
+    }
+    if (!isRemovedEntry(entry)){
+      console_print(0, i*10, entry.name);
+      console_print_int(1, i*10, entry.fstCluster);
+    }
+    i++;
+  }
+  */
+  /*
+  FAT32_entry dir1;
+  int i = 0;
+  char test[1000], read[1001];
+  for (int i = 0; i < 1000; i++){
+    test[i] = 'A'+i%15;
+  }
+  writeFile(infoFat, infoFat.rootCluster, "fichier.txt", test, 1000);
+  while(1){
+    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, i, &entry); //it's a valid directory
+    if (!isValidEntry(entry)){
+      break;
+    }
+    if (!isRemovedEntry(entry)){
+      console_print(i, 0, entry.name);
+    }
+    i++;
+  }
+  getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 3, &entry);
+  readFile(infoFat, entry.fstCluster, read, 1000);
+  read[1000] = '\0';
+  console_print(10, 0, read);*/
+}
 
-    /*int i = 0;
-    FAT32_entry dir1;
-    //removeEntryFromDirectory(infoFat, infoFat.rootCluster, 2);
-    while(1){
-    	getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, i, &entry); //it's a valid directory
-    	if (!isValidEntry(entry)){
-    		break;
-    	}
-    	if (!isRemovedEntry(entry)){
-    		console_print(i, 0, entry.name);
-    	}
-    	i++;
-    }*/
-    
-    /*FAT32_entry dir1;
-    int i = 0;
-    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &dir1);
-    char name[] = "TEST000.   ";
-    for (int i = 0; i < 100; i++){
-      name[4] = '0'+(i/100)%10;
-      name[5] = '0'+(i/10)%10;
-      name[6] = '0'+i%10;
-      mkdir(infoFat, dir1.fstCluster, name);
-      console_print_int(0, i*5, i);
+
+void ls(){
+  FAT32_entry dir1; //comment faire la commande ls
+  int i = 0;
+  getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &dir1);
+  while(1){
+    getMetadataFileFromDirectory(infoFat, dir1.fstCluster, i, &entry); //it's a valid directory
+    if (!isValidEntry(entry)){
+      break;
     }
-    while(1){
-    	getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, i, &entry); //it's a valid directory
-    	if (!isValidEntry(entry)){
-    		break;
-    	}
-    	if (!isRemovedEntry(entry)){
-    		console_print(0, i*10, entry.name);
-    		console_print_int(1, i*10, entry.fstCluster);
-    	}
-    	i++;
+    if (!isRemovedEntry(entry)){
+      console_print(i, 0, entry.name);
     }
-    */
-    /*
-    FAT32_entry dir1;
-    int i = 0;
-    char test[1000], read[1001];
-    for (int i = 0; i < 1000; i++){
-      test[i] = 'A'+i%15;
-    }
-    writeFile(infoFat, infoFat.rootCluster, "fichier.txt", test, 1000);
-    while(1){
-    	getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, i, &entry); //it's a valid directory
-    	if (!isValidEntry(entry)){
-    		break;
-    	}
-    	if (!isRemovedEntry(entry)){
-    		console_print(i, 0, entry.name);
-    	}
-    	i++;
-    }
-    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 3, &entry);
-    readFile(infoFat, entry.fstCluster, read, 1000);
-    read[1000] = '\0';
-    console_print(10, 0, read);*/
+    i++;
+  }
 }

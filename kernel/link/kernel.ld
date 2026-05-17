@@ -3,7 +3,7 @@ OUTPUT_ARCH(i386:x86-64)
 ENTRY(entry_from_boot)
 
 SECTIONS {
-    . = 0x40000;
+    . = 0x800000;
 
     /* Text segment: instructions and read-only globals */
     .text : {

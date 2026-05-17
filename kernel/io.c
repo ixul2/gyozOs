@@ -40,10 +40,13 @@ char keyboard_to_ascii(unsigned char c, int is_shifted){
     }
     else if (c == 0x39){
     	return ' ';
-    }
-    else{
-        return 0;
-    }
+    } else if (c == 0x1C){
+        return '\n';
+    } else if (c == 0x0F){
+        return '\t';
+    } else if (c == 0x0E) {
+        return c;
+    } else return 0;
 }
 
 void cleanScreen(){

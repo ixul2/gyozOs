@@ -13,7 +13,7 @@ uint32_t kernel(){
     init_virtual_memory();
     setupInterrupts();
     setupDrive();
-    serial_write("===========================TEST============================\n");
+    init_processes();
     launch_shell();
     while(1);
 }
