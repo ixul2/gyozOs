@@ -25,12 +25,6 @@ void init_process(proc* p){
     p->reg.reg_ss = SEGSEL_APP_DATA | 3;
     p->reg.reg_rflags = EFLAGS_IF;
 
-    /*if (flags & PROCINIT_ALLOW_PROGRAMMED_IO) {
-        p->p_registers.reg_rflags |= EFLAGS_IOPL_3;
-    }
-    if (flags & PROCINIT_DISABLE_INTERRUPTS) {
-        p->p_registers.reg_rflags &= ~EFLAGS_IF;
-    }*/
     p->page_table = kernel_pagetable;
     frames_info[(uintptr_t)kernel_pagetable/PAGE_SIZE].refcount++;
 }
@@ -43,10 +37,8 @@ void load_process(proc* p, int program) {
                                _binary_userspace__obj_p_shell_bin_start);
     size_t pages_needed = (bin_size + PAGE_SIZE - 1) / PAGE_SIZE;
 
-    // 3. User virtual base for this process
     uintptr_t user_base = PROC_START_ADDR + p->id * PROC_SIZE;
 
-    // 4. Allocate and map pages for the binary
     for (size_t i = 0; i < pages_needed; i++) {
         map_page(p->page_table,
                  user_base + i * PAGE_SIZE,
@@ -55,25 +47,24 @@ void load_process(proc* p, int program) {
                  NULL);
     }
 
-    // 5. Copy the embedded binary into user space
     memcpy((void*)user_base, _binary_userspace__obj_p_shell_bin_start, bin_size);
 
-    // 6. Zero out the remainder of the last page (clears any uninitialised data)
     size_t last_page_off = bin_size & (PAGE_SIZE - 1);
     if (last_page_off != 0)
         memset((void*)(user_base + bin_size), 0, PAGE_SIZE - last_page_off);
 
-    // 7. Map a user stack at the top of the region
-    map_page(p->page_table,
-             user_base + PROC_SIZE - PAGE_SIZE,
-             user_base + PROC_SIZE - PAGE_SIZE,
-             PTE_P | PTE_W | PTE_U,
-             NULL);
-    memset((void*)(user_base + PROC_SIZE - PAGE_SIZE), 0, PAGE_SIZE);
+    size_t stack_pages = 1;
+    for (size_t i = 0; i < stack_pages; i++) {
+        map_page(p->page_table,
+                user_base + PROC_SIZE - (i + 1) * PAGE_SIZE,
+                user_base + PROC_SIZE - (i + 1) * PAGE_SIZE,
+                PTE_P | PTE_W | PTE_U,
+                NULL);
+        memset((void *)(user_base + PROC_SIZE - (i + 1) * PAGE_SIZE), 0, PAGE_SIZE);
+    }
 
-    // 8. Set up initial CPU context
-    p->reg.reg_rip = user_base;                      // entry point (0x100000 + offset)
-    p->reg.reg_rsp = user_base + PROC_SIZE - 8;      // stack grows down
+    p->reg.reg_rip = user_base;
+    p->reg.reg_rsp = user_base + PROC_SIZE - 8;
 
     p->state = P_RUNNABLE;
 }

@@ -14,5 +14,5 @@ typedef struct drive_info{
 void setupDrive();
 void readDiskSector(drive_info drive, uintptr_t ramAddr, uint32_t sectorNumber);
 void writeDiskSector(drive_info drive, uintptr_t ramAddr, uint32_t sectorNumber);
-void ls(void);
+int list_files(char*);
 #endif

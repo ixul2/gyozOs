@@ -1,16 +1,26 @@
+#include <stddef.h>
 static inline void sys_write_char(int,char);
 void sys_write(char*);
 static inline char sys_getchar(void);
-static inline void sys_ls(void);
+static inline void sys_cursor(void);
+void sys_ls(void);
 void process_cmd(void);
+void clear_screen(void);
+void set_cursor(int);
+void scroll(void);
 
 #define BUFF_LEN 78
+#define SCREEN_SIZE 80*25
 
 char cmd[BUFF_LEN];
-int cmd_len = 0;
-int cursor = 0;
+static char screen[SCREEN_SIZE];
+int cmd_len;
+int cursor;
+
 
 void process_main(){
+    cmd_len = 0;
+    cursor = 0;
     while (1) {
         sys_write("> ");
         while(1){
@@ -19,6 +29,7 @@ void process_main(){
                 if(cmd_len){
                     cmd_len--;
                     sys_write_char(--cursor, 0);
+                    screen[cursor] = 0;
                 }
             } else if(c == '\t'){
                 for(int i = 0; i<4; i++){
@@ -28,7 +39,7 @@ void process_main(){
                     }
                 }
             } else if(c == '\n') {
-                cursor = cursor + 80 - (cursor % 80);
+                set_cursor(cursor + 80 - (cursor % 80));
                 process_cmd();
                 break;
             } else if(cmd_len < BUFF_LEN){
@@ -39,11 +50,11 @@ void process_main(){
     }
 }
 
-char cmd1[BUFF_LEN];
+char cmd1[BUFF_LEN+1];
 int cmd1_len;
-char cmd2[BUFF_LEN];
+char cmd2[BUFF_LEN+1];
 int cmd2_len;
-char cmd3[BUFF_LEN];
+char cmd3[BUFF_LEN+1];
 int cmd3_len;
 int too_many;
 
@@ -61,6 +72,7 @@ void parse_cmd(void){
         cmd1_len++;
         ind++;
     }
+    cmd1[cmd1_len] = '\0';
     while(ind < cmd_len && cmd[ind] == ' '){
         ind++;
     }
@@ -69,6 +81,7 @@ void parse_cmd(void){
         cmd2_len++;
         ind++;
     }
+    cmd2[cmd2_len] = '\0';
     while(ind < cmd_len && cmd[ind] == ' '){
         ind++;
     }
@@ -77,6 +90,7 @@ void parse_cmd(void){
         cmd3_len++;
         ind++;
     }
+    cmd3[cmd3_len] = '\0';
     while(ind < cmd_len && cmd[ind] == ' '){
         ind++;
     }
@@ -86,15 +100,27 @@ void parse_cmd(void){
 
 }
 
+int strcmp(char *a, char *b) {
+    int i = 0;
+  while (*a && *b && *a == *b && i<= 5) {
+    ++a, ++b;
+    i++;
+  }
+  return ((unsigned char)*a > (unsigned char)*b) -
+         ((unsigned char)*a < (unsigned char)*b);
+}
+
 void process_cmd(void){
     parse_cmd();
     if(cmd1_len == 0){
         
-    } else if(cmd2_len == 0 && cmd1_len == 2 && cmd1[0] == 'l' && cmd1[1] == 's'){
+    } else if(cmd2_len == 0 && strcmp(cmd1,"ls") == 0){
         sys_ls();
-    } else if(cmd2_len == 0 && cmd1_len == 5 && cmd1[0] == 'c' && cmd1[1] == 'l' && cmd1[2] == 'e' && cmd1[3] == 'a' && cmd1[4] == 'n'){
+    } else if(cmd2_len == 0 && strcmp(cmd1,"clean") == 0){
         clear_screen();
-        cursor = 0;
+        set_cursor(0);
+    } else if (cmd2_len == 0 && strcmp(cmd1,"help") == 0){
+        sys_write("Availables commands: ls help clean\n");
     } else {
         sys_write("Unknown command\n");
     }
@@ -111,6 +137,7 @@ char sys_getchar() {
 }
 
 void sys_write_char(int pos, char c) {
+    screen[pos] = c;
     asm volatile ("int $0x81"
         : 
         : "D"(c), "S"(pos)
@@ -133,21 +160,58 @@ void sys_write(char *s) {
     while(s[i] != '\0'){
         char c = s[i];
         if(c == '\n'){
-            cursor = cursor + 80 - (cursor % 80);
+            set_cursor(cursor + 80 - (cursor % 80));
         } else if(c == '\t'){
             for(int j = 0; j<4; j++){
-                sys_write_char(cursor++, ' ');
+                sys_write_char(cursor, ' ');
+                set_cursor(cursor+1);
             }
         } else {
-            sys_write_char(cursor++,c);
+            sys_write_char(cursor,c);
+            set_cursor(cursor+1);
         }
         i++;
     }
 }
 
+void scroll(){
+    for(int i = 1; i<25;i++){
+        int l = (i-1)*80;
+        for(int j = 0; j<80; j++){
+            screen[l + j - 80] = screen[l + j];
+            sys_write_char(l + j - 80,screen[l + j]);
+        }
+    }
+}
+
+void set_cursor(int new_pos) {
+    while(new_pos >= SCREEN_SIZE){
+        new_pos-=80;
+        scroll();
+    }
+    cursor = new_pos;
+}
+
+void sys_cursor() {
+    asm volatile("int $0x82"
+            :
+            : "D"(cursor)
+            : "cc", "memory");
+}
+
+char file_name[51];
+
 void sys_ls(void){
-    asm volatile ("int $0x83"
-        : 
-        :
-        : "cc", "memory");
+    int cont = 1;
+    while(cont){
+        asm  volatile ("int $0x83"
+            : "=a"(cont)
+            : "D"(file_name)
+            : "cc", "memory");
+        if(cont){
+            sys_write("  ");
+            sys_write(file_name);
+        }
+    }
+    sys_write("\n");
 }

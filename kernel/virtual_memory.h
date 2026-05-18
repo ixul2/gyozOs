@@ -13,7 +13,7 @@
 #define KERNEL_START 0x40000
 #define KERNEL_STACK_TOP 0x80000
 #define PROC_START_ADDR 0x100000
-#define PROC_SIZE 0X40000
+#define PROC_SIZE 0XF0000
 
 #define SEGSEL_KERN_CODE 0x8  // kernel code segment
 #define SEGSEL_APP_CODE 0x10  // application code segment

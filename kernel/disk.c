@@ -49,7 +49,6 @@ void readDiskSector(drive_info drive, uintptr_t ramAddr, uint32_t sectorNumber) 
   outb(drive.channel + 5, sectorNumber >> 16);
   outb(drive.channel + 6, (sectorNumber >> 24) | 0xE0 | (drive.drive & (1 << 4)));
   outb(drive.channel + 7, 0x20); // send the command: 0x20 = read sectors
-
   waitdisk(true);
   insl(drive.channel, (void *)ramAddr, 512 / 4); // read 128 words (or 512 bytes) from the disk
 }
@@ -82,7 +81,6 @@ int findPartition(drive_info hardDrive){
 int partitionStart, foundDisk;
 drive_info activeDrive;
 FAT32_Metadata infoFat;
-FAT32_entry entry;
 
 void setupDrive(){
   foundDisk = false;
@@ -181,19 +179,23 @@ void setupDrive(){
   console_print(10, 0, read);*/
 }
 
+int file_ind = 0;
 
-void ls(){
-  FAT32_entry dir1; //comment faire la commande ls
-  int i = 0;
+int list_files(char* buffer){
+  FAT32_entry dir1;
+  FAT32_entry entry;
   getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &dir1);
   while(1){
-    getMetadataFileFromDirectory(infoFat, dir1.fstCluster, i, &entry); //it's a valid directory
+    getMetadataFileFromDirectory(infoFat, dir1.fstCluster, file_ind, &entry);
     if (!isValidEntry(entry)){
-      break;
+      file_ind = 0;
+      return 0;
     }
-    if (!isRemovedEntry(entry)){
-      console_print(i, 0, entry.name);
+    if(!isRemovedEntry(entry)){
+      strcpy(buffer,entry.name);
+      file_ind++;
+      return 1;
     }
-    i++;
+    file_ind++;
   }
 }

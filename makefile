@@ -15,12 +15,10 @@ run:
 
 bootable_disk: _obj/mkbootdisk \
                bootloader/_obj/all_boot \
-               kernel/_obj/all_kernel \
-               userspace/_obj/p_shell.bin
+               kernel/_obj/all_kernel
 	_obj/mkbootdisk \
 		bootloader/_obj/all_boot \
 		kernel/_obj/all_kernel \
-		userspace/_obj/p_shell.bin \
 		> bootable_disk
 
 
@@ -104,14 +102,21 @@ userspace/_obj/p_shell.o: userspace/p_shell.c
 		-c \
 		-o $@ $<
 
-
-userspace/_obj/p_shell.bin: userspace/_obj/p_shell.o
+# Link to an ELF first (so we keep all section headers)
+userspace/_obj/p_shell.elf: userspace/_obj/p_shell.o
 	ld \
 		-e process_main \
 		-T userspace/link/p_shell.ld \
-		--oformat=binary \
 		-o $@ \
 		$^
+
+# Convert ELF to raw binary, forcing .bss to be included as zero bytes
+userspace/_obj/p_shell.bin: userspace/_obj/p_shell.elf
+	objcopy \
+		-O binary \
+		--set-section-flags .bss=alloc,load,contents \
+		$< \
+		$@
 
 # =========================================================
 # Embed p_shell.bin into kernel

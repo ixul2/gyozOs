@@ -8,8 +8,8 @@ extern void syscall_handler_wrapper(void);
 extern void print_int_asm(void);
 extern void sys_getchar_handler_wrapper(void);
 extern void sys_write_char_handler_wrapper(void);
-extern void sys_write_handler_wrapper(void);
-extern void sys_ls_handler_wrapper(void);
+extern void sys_cursor_handler_wrapper(void);
+extern void sys_list_files_handler_wrapper(void);
 extern volatile int key_ready;
 extern char last_key;
 extern void ls(void);
@@ -33,7 +33,8 @@ void setupIDTable(IDT_ptr *idt_ptr){
 	setupIDTEntry(&IDTable[48], (uint64_t) print_int_asm, 3); //custom interrupts
 	setupIDTEntry(&IDTable[SYS_GETCHAR_INT], (uint64_t) sys_getchar_handler_wrapper, 3);
 	setupIDTEntry(&IDTable[SYS_WRITE_CHAR_INT], (uint64_t) sys_write_char_handler_wrapper, 3);
-	setupIDTEntry(&IDTable[SYS_LS_INT], (uint64_t) sys_ls_handler_wrapper, 3);
+	setupIDTEntry(&IDTable[SYS_CURSOR_INT], (uint64_t) sys_cursor_handler_wrapper, 3);
+	setupIDTEntry(&IDTable[SYS_LIST_FILES_INT], (uint64_t) sys_list_files_handler_wrapper, 3);
 	idt_ptr->base = (uint64_t) IDTable;
 	idt_ptr->limit = sizeof(IDTable)-1;
 }
@@ -79,8 +80,18 @@ void sys_getchar_handler(registers_t *reg) {
 	run(current);
 }
 
-void sys_ls_handler(){
-	ls();
+void sys_list_files_handler(registers_t *reg){
+	int cont = list_files((char*)reg->reg_rdi);
+	current->reg.reg_rax = cont;
+	run(current);
+}
+
+void sys_cursor_handler(registers_t *reg){
+    outb(0x3D4, 0x0F);                // cursor location low byte
+    outb(0x3D5, (uint8_t)(reg->reg_rdi & 0xFF));
+
+    outb(0x3D4, 0x0E);                // cursor location high byte
+    outb(0x3D5, (uint8_t)((reg->reg_rdi >> 8) & 0xFF));
 	run(current);
 }
 
@@ -96,9 +107,12 @@ void exception(registers_t* reg){
 			sys_write_char_handler(reg);
 			break;
 
+		case SYS_LIST_FILES_INT:
+			sys_list_files_handler(reg);
+			break;
 		
-		case SYS_LS_INT:
-			sys_ls_handler();
+		case SYS_CURSOR_INT:
+			sys_cursor_handler(reg);
 			break;
 	}
 }

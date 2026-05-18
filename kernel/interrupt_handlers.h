@@ -10,8 +10,8 @@
 
 #define SYS_GETCHAR_INT 0x80
 #define SYS_WRITE_CHAR_INT 0x81
-#define SYS_WRITE_INT 0x82
-#define SYS_LS_INT 0x83
+#define SYS_CURSOR_INT 0x82
+#define SYS_LIST_FILES_INT 0x83
 
 void setupInterrupts(void);
 typedef struct IDT_entry IDT_entry;
@@ -32,7 +32,5 @@ struct IDT_ptr
     uint16_t limit;
     uint64_t base;
 } __attribute__((packed));
-
-void sys_ls_handler(void);
 
 #endif

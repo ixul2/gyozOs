@@ -25,3 +25,10 @@ int strlen(char* s){
   }
   return n;
 }
+
+void *strcpy(char *dst, const char *src) {
+  char *d = dst;
+  do {
+    *d++ = *src++;
+  } while (d[-1]);
+}
