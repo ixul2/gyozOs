@@ -24,6 +24,7 @@ void process_main(){
     while (1) {
         sys_write("> ");
         while(1){
+            sys_cursor();
             char c = sys_getchar();
             if(c == 0x0E){
                 if(cmd_len){
