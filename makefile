@@ -5,8 +5,7 @@ run:
 		-drive format=raw,file=bootable_disk \
 		-no-reboot \
 		-drive file=external_disk.img,format=raw \
-		-serial stdio \
-		-d int,cpu_reset,guest_errors
+		-serial stdio
 
 
 # =========================================================

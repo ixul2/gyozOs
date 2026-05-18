@@ -265,7 +265,7 @@ void writeFile(FAT32_Metadata infoFat, uint32_t dirCluster, char* filename, uint
 		writeDiskSector(infoFat.hardDrive, (uintptr_t) diskBuffer, sector); //we put it in the hard drive
 		bufferSize -= copySize;
 		indexSector++;
-		if (indexSector >=infoFat.sectorPerCluster){
+		if (indexSector >= infoFat.sectorPerCluster){
 			fileCluster = nextCluster(infoFat, fileCluster);
 			indexSector = 0;
 		}

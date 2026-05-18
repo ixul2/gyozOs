@@ -10,6 +10,8 @@ extern void sys_getchar_handler_wrapper(void);
 extern void sys_write_char_handler_wrapper(void);
 extern void sys_cursor_handler_wrapper(void);
 extern void sys_list_files_handler_wrapper(void);
+extern void sys_mkdir_handler_wrapper(void);
+extern void sys_cd_handler_wrapper(void);
 extern volatile int key_ready;
 extern char last_key;
 extern void ls(void);
@@ -39,6 +41,8 @@ void setupIDTable(IDT_ptr *idt_ptr){
     setupIDTEntry(&IDTable[SYS_WRITE_CHAR_INT], (uint64_t) sys_write_char_handler_wrapper, 3);
     setupIDTEntry(&IDTable[SYS_CURSOR_INT], (uint64_t) sys_cursor_handler_wrapper, 3);
     setupIDTEntry(&IDTable[SYS_LIST_FILES_INT], (uint64_t) sys_list_files_handler_wrapper, 3);
+    setupIDTEntry(&IDTable[SYS_MKDIR_INT], (uint64_t) sys_mkdir_handler_wrapper, 3);
+    setupIDTEntry(&IDTable[SYS_CD_INT], (uint64_t) sys_cd_handler_wrapper, 3);
     idt_ptr->base = (uint64_t) IDTable;
     idt_ptr->limit = sizeof(IDTable)-1;
 }
@@ -57,7 +61,7 @@ void setupPIC(){
     outb(0x21, 0x01); //enable 8086/88 mode
     outb(0xA1, 0x01);
     
-    outb(0x21, 0xFC); //unmask keyboard IRQ and time IRQ
+    outb(0x21, 0xFD); //unmask keyboard IRQ and time IRQ
     outb(0xA1, 0xFF);
 }
 
@@ -99,6 +103,16 @@ void sys_cursor_handler(registers_t *reg){
     run(current);
 }
 
+void sys_mkdir_handler(registers_t* reg){
+    make_directory((char*)reg->reg_rdi);
+    run(current);
+}
+
+void sys_cd_handler(registers_t* reg){
+    change_directory((int)reg->reg_rdi);
+    run(current);
+}
+
 void exception(registers_t* reg){
     current->reg = *reg;
     change_pagetable(kernel_pagetable);
@@ -118,5 +132,11 @@ void exception(registers_t* reg){
         case SYS_CURSOR_INT:
             sys_cursor_handler(reg);
             break;
+        
+        case SYS_MKDIR_INT:
+            sys_mkdir_handler(reg);
+
+        case SYS_CD_INT:
+            sys_cd_handler(reg);
     }
 }

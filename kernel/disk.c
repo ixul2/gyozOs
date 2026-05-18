@@ -14,7 +14,7 @@ uint8_t diskBuffer[512];
 void waitdisk(int DRQ) {
   int status ;
   do{
-    status = inb(0x1F7);
+      status = inb(0x1F7);
   }
   while ((status & 0x80) || (!(status & 0x40)) || (DRQ && !(status & 0x08)));
 }
@@ -81,14 +81,15 @@ int findPartition(drive_info hardDrive){
 int partitionStart, foundDisk;
 drive_info activeDrive;
 FAT32_Metadata infoFat;
+uint32_t currentCluster;
 
 void setupDrive(){
     foundDisk = false;
     for (int activeDriveIndex = 0; activeDriveIndex < 3; activeDriveIndex++){
         activeDrive = possibleDrives[activeDriveIndex];
         if (pingDisk(activeDrive)){
-          foundDisk = true;
-          break; //we stop when we find the active disk
+            foundDisk = true;
+            break; //we stop when we find the active disk
         }
     }
     if (!foundDisk){
@@ -96,9 +97,10 @@ void setupDrive(){
     }
     partitionStart = findPartition(activeDrive);
     if (!partitionStart){
-      fail("No partition found on the disk");
+        fail("No partition found on the disk");
     }
   readBootSector(activeDrive, partitionStart, &infoFat);
+  currentCluster = infoFat.rootCluster;
   /*getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &entry); //it's a valid directory
   console_print_int(0, 0, isValidEntry(entry));
   console_print_int(1, 0, isDirectory(entry));*/
@@ -184,18 +186,31 @@ int file_ind = 0;
 int list_files(char* buffer){
     FAT32_entry dir1;
     FAT32_entry entry;
-    getMetadataFileFromDirectory(infoFat, infoFat.rootCluster, 0, &dir1);
+    getMetadataFileFromDirectory(infoFat, currentCluster, 0, &dir1);
     while(1){
-      getMetadataFileFromDirectory(infoFat, dir1.fstCluster, file_ind, &entry);
-      if (!isValidEntry(entry)){
-        file_ind = 0;
-        return 0;
-      }
-      if(!isRemovedEntry(entry)){
-        strcpy(buffer,entry.name);
+        getMetadataFileFromDirectory(infoFat, dir1.fstCluster, file_ind, &entry);
+        if (!isValidEntry(entry)){
+            file_ind = 0;
+            return -1;
+        }
+        if(!isRemovedEntry(entry)){
+            strcpy(buffer,entry.name);
+            file_ind++;
+            return (file_ind-1);
+        }
         file_ind++;
-        return 1;
-      }
-      file_ind++;
     }
+}
+
+void make_directory(char* name){
+    FAT32_entry dir1;
+    getMetadataFileFromDirectory(infoFat, currentCluster, 0, &dir1);
+    mkdir(infoFat, dir1.fstCluster, name);
+}
+
+void change_directory(int ind){
+    FAT32_entry entry;
+    getMetadataFileFromDirectory(infoFat, currentCluster, ind, &entry);
+    currentCluster = entry.fstCluster;
+    file_ind = 0;
 }

@@ -12,6 +12,8 @@
 #define SYS_WRITE_CHAR_INT 0x81
 #define SYS_CURSOR_INT 0x82
 #define SYS_LIST_FILES_INT 0x83
+#define SYS_MKDIR_INT 0x84
+#define SYS_CD_INT 0x85
 
 void setupInterrupts(void);
 typedef struct IDT_entry IDT_entry;

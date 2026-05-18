@@ -3,6 +3,9 @@ static inline void sys_write_char(int,char);
 void sys_write(char*);
 static inline char sys_getchar(void);
 static inline void sys_cursor(void);
+static inline void sys_mkdir(void);
+static inline void sys_cd(int);
+
 void sys_ls(void);
 void process_cmd(void);
 void clear_screen(void);
@@ -14,27 +17,53 @@ void scroll(void);
 
 char cmd[BUFF_LEN];
 static char screen[SCREEN_SIZE];
+char path[51];
 int cmd_len;
+int cmd_ind;
 int cursor;
-
+int backward_steps_to_make = 0;
 
 void process_main(){
     cmd_len = 0;
     cursor = 0;
+    path[0] = '\0';
     while (1) {
+        sys_write(path);
         sys_write("> ");
         while(1){
             sys_cursor();
             char c = sys_getchar();
             if(c == 0x0E){
-                if(cmd_len){
-                    cmd_len--;
+                if(cmd_ind){
+                    if(cmd_ind == cmd_len){
+                        cmd_len--;
+                    }
+                    cmd_ind--;
                     sys_write_char(--cursor, 0);
                     screen[cursor] = 0;
                 }
+            } else if(c == 1){
+                if(cmd_ind != 0){
+                    cmd_ind--;
+                    set_cursor(cursor - 1);
+                }
+            } else if(c == 2){
+                if(cmd_len != cmd_ind){
+                    cmd_ind++;
+                    set_cursor(cursor + 1);
+                }
+            } else if(c == 3){
+                if(cursor - 80 >= 0){
+                    scroll();
+                    set_cursor(cursor - 80);
+                }
             } else if(c == '\t'){
                 for(int i = 0; i<4; i++){
-                    if(cmd_len < BUFF_LEN){
+                    if(cmd_ind < cmd_len){
+                        cmd[cmd_ind++] = ' ';
+                        sys_write_char(cursor++,' ');
+                    } else if(cmd_len < BUFF_LEN){
+                        cmd_ind++;
                         cmd[cmd_len++] = ' ';
                         sys_write_char(cursor++,' ');
                     }
@@ -44,8 +73,14 @@ void process_main(){
                 process_cmd();
                 break;
             } else if(cmd_len < BUFF_LEN){
-                cmd[cmd_len++] = c;
-                sys_write_char(cursor++,c);
+                if(cmd_ind < cmd_len){
+                    cmd[cmd_ind++] = c;
+                    sys_write_char(cursor++,c);
+                } else if(cmd_len < BUFF_LEN){
+                    cmd_ind++;
+                    cmd[cmd_len++] = c;
+                    sys_write_char(cursor++,c);
+                }
             }
         }
     }
@@ -53,11 +88,31 @@ void process_main(){
 
 char cmd1[BUFF_LEN+1];
 int cmd1_len;
-char cmd2[BUFF_LEN+1];
+char cmd2[BUFF_LEN+4];
 int cmd2_len;
 char cmd3[BUFF_LEN+1];
 int cmd3_len;
 int too_many;
+
+void add_point_to_name(char* name, int len){
+    int i = len-1;
+    while(name[i] != '.' && i>= 0){
+        i--;
+    }
+    if(i<0){
+        name[len] = '.';
+        for(int j = 0; j<3; j++){
+            name[len + 1 + j] = ' ';
+        }
+        name[len + 4] = '\0';
+    } else if(3-(len-1-i) > 0){
+        int diff = 3 - (len-1-i);
+        for(int j = len; j<len+diff; j++){
+            name[j] = ' ';
+        }
+        name[len+diff] = '\0';
+    }
+}
 
 void parse_cmd(void){
     cmd1_len = 0;
@@ -69,7 +124,7 @@ void parse_cmd(void){
         ind++;
     }
     while(ind < cmd_len && cmd[ind] != ' '){
-        cmd1[ind] = cmd[ind];
+        cmd1[cmd1_len] = cmd[ind];
         cmd1_len++;
         ind++;
     }
@@ -78,7 +133,7 @@ void parse_cmd(void){
         ind++;
     }
     while(ind < cmd_len && cmd[ind] != ' '){
-        cmd2[ind] = cmd[ind];
+        cmd2[cmd2_len] = cmd[ind];
         cmd2_len++;
         ind++;
     }
@@ -87,7 +142,7 @@ void parse_cmd(void){
         ind++;
     }
     while(ind < cmd_len && cmd[ind] != ' '){
-        cmd3[ind] = cmd[ind];
+        cmd3[cmd3_len] = cmd[ind];
         cmd3_len++;
         ind++;
     }
@@ -95,11 +150,12 @@ void parse_cmd(void){
     while(ind < cmd_len && cmd[ind] == ' '){
         ind++;
     }
-    if(ind != cmd_len){
+    if(cmd[ind] != '\0'){
         too_many = 1;
     }
-
 }
+
+char file_name_return[51];
 
 int strcmp(char *a, char *b) {
     int i = 0;
@@ -111,21 +167,75 @@ int strcmp(char *a, char *b) {
          ((unsigned char)*a < (unsigned char)*b);
 }
 
+int ind_of_file_in_current_directory(char* active_buffer){
+    int ind = 0;
+    int found = -1;
+    while(ind != -1){
+        asm volatile ("int $0x83"
+            : "=a"(ind)
+            : "D"(file_name_return)
+            : "cc", "memory");
+        if(ind != -1 && strcmp(file_name_return,active_buffer) == 0){
+            found = ind;
+        } else if (ind == -1){
+            return found;
+        }
+    }
+}
+
 void process_cmd(void){
     parse_cmd();
     if(cmd1_len == 0){
         
-    } else if(cmd2_len == 0 && strcmp(cmd1,"ls") == 0){
-        sys_ls();
+    } else if(strcmp(cmd1,"ls") == 0){
+        if(cmd2_len != 0){
+            sys_write("Too many arguments\n");
+        } else {
+            sys_ls();   
+        }
     } else if(cmd2_len == 0 && strcmp(cmd1,"clean") == 0){
-        clear_screen();
-        set_cursor(0);
+        if(cmd2_len != 0){
+            sys_write("Too many arguments\n");
+        } else {
+            clear_screen();
+            set_cursor(0);
+        }
     } else if (cmd2_len == 0 && strcmp(cmd1,"help") == 0){
-        sys_write("Availables commands: ls help clean\n");
+        if(cmd2_len != 0){
+            sys_write("Too many arguments\n");
+        } else {
+            sys_write("Availables commands: ls help clean\n");
+        }
+    } else if (cmd2_len != 0 && cmd3_len == 0 && strcmp(cmd1,"mkdir") == 0) {
+        if(cmd3_len != 0){
+            sys_write("Too many arguments\n");
+        } else {
+            sys_mkdir();
+        }
+    } else if (cmd2_len != 0 && cmd3_len == 0 && strcmp(cmd1,"cd") == 0){
+        if(cmd3_len != 0){
+            sys_write("Too many arguments\n");
+        } else {
+            int ind = ind_of_file_in_current_directory(cmd2);
+            if(ind == -1){
+                sys_write(cmd2); sys_write(" doesn't exist\n");
+            } else {
+                sys_cd(ind);
+            }
+        }
     } else {
         sys_write("Unknown command\n");
     }
     cmd_len = 0;
+    cmd_ind = 0;
+}
+
+void sys_write_char(int pos, char c) {
+    screen[pos] = c;
+    asm volatile ("int $0x81"
+        : 
+        : "D"(c), "S"(pos)
+        : "cc", "memory");
 }
 
 char sys_getchar() {
@@ -135,14 +245,6 @@ char sys_getchar() {
         :
         : "cc", "memory");
     return c;
-}
-
-void sys_write_char(int pos, char c) {
-    screen[pos] = c;
-    asm volatile ("int $0x81"
-        : 
-        : "D"(c), "S"(pos)
-        : "cc", "memory");
 }
 
 void clear_line(int l){
@@ -179,9 +281,13 @@ void scroll(){
     for(int i = 1; i<25;i++){
         int l = (i-1)*80;
         for(int j = 0; j<80; j++){
-            screen[l + j - 80] = screen[l + j];
-            sys_write_char(l + j - 80,screen[l + j]);
+            screen[l + j] = screen[l + j + 80];
+            sys_write_char(l + j,screen[l + j]);
         }
+    }
+    for(int j = 0; j<80; j++){
+        screen[24*80 + j] = 0;
+        sys_write_char(24*80 + j,0);
     }
 }
 
@@ -200,19 +306,31 @@ void sys_cursor() {
             : "cc", "memory");
 }
 
-char file_name[51];
-
 void sys_ls(void){
-    int cont = 1;
-    while(cont){
+    int ind = 0;
+    while(ind != -1){
         asm  volatile ("int $0x83"
-            : "=a"(cont)
-            : "D"(file_name)
+            : "=a"(ind)
+            : "D"(file_name_return)
             : "cc", "memory");
-        if(cont){
+        if(ind >= 0){
             sys_write("  ");
-            sys_write(file_name);
+            sys_write(file_name_return);
         }
     }
     sys_write("\n");
+}
+
+void sys_mkdir(){
+    asm volatile ("int $0x84"
+        :
+        : "D"(cmd2)
+        : "cc", "memory");
+}
+
+void sys_cd(int ind){
+    asm volatile ("int $0x85"
+        :
+        : "D"(ind)
+        : "cc", "memory");
 }

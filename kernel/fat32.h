@@ -8,7 +8,7 @@
 typedef struct FAT32_Metadata FAT32_Metadata;
 struct FAT32_Metadata {
     int sectorPerCluster;
-    int rootCluster;
+    uint32_t rootCluster;
     int fatLBA;
     int fstClusterLBA;
     int sectorPerFat;
