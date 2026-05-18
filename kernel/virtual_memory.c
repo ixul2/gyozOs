@@ -216,7 +216,6 @@ void init_virtual_memory()
     }
     for(uintptr_t i = 0x000000; i < MEM_SIZE; i += PAGE_SIZE)
         map_page(kernel_pagetable, i, i, PTE_P | PTE_W , NULL);
-    map_page(kernel_pagetable, (uintptr_t)0, (uintptr_t)0, PTE_P, NULL);
     change_pagetable(kernel_pagetable);
     init_framing();
 }
