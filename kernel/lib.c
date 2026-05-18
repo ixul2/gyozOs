@@ -11,24 +11,24 @@ void *memset(void *dst, int c, size_t n)
 }
 
 void *memcpy(void *dst, const void *src, size_t n) {
-  const char *s = (const char *)src;
-  for (char *d = (char *)dst; n > 0; --n, ++s, ++d) {
-    *d = *s;
-  }
-  return dst;
+    const char *s = (const char *)src;
+    for (char *d = (char *)dst; n > 0; --n, ++s, ++d) {
+      *d = *s;
+    }
+    return dst;
 }
 
 int strlen(char* s){
-  int n = 0;
-  while(s[n] != '\0'){
-    n++;
-  }
-  return n;
+    int n = 0;
+    while(s[n] != '\0'){
+      n++;
+    }
+    return n;
 }
 
 void *strcpy(char *dst, const char *src) {
-  char *d = dst;
-  do {
-    *d++ = *src++;
-  } while (d[-1]);
+    char *d = dst;
+    do {
+      *d++ = *src++;
+    } while (d[-1]);
 }

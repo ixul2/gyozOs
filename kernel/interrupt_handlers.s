@@ -10,7 +10,7 @@ keyboard_handler_wrapper:
     movq $0, %rax
     inb $0x60, %al          # read scan code to clear PIC
     
-    pushq %rdi 		    # calls keyboard_handler(keycode)
+    pushq %rdi             # calls keyboard_handler(keycode)
     movq %rax, %rdi
     call keyboard_handler
     pop %rdi

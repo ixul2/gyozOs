@@ -7,23 +7,23 @@
 
 typedef struct FAT32_Metadata FAT32_Metadata;
 struct FAT32_Metadata {
-	int sectorPerCluster;
-	int rootCluster;
-	int fatLBA;
-	int fstClusterLBA;
-	int sectorPerFat;
-	int nbFats;
-	drive_info hardDrive;
+    int sectorPerCluster;
+    int rootCluster;
+    int fatLBA;
+    int fstClusterLBA;
+    int sectorPerFat;
+    int nbFats;
+    drive_info hardDrive;
 };
 
 
 void setupDrive(void);
 typedef struct FAT32_entry FAT32_entry;
 struct FAT32_entry{
-	unsigned char name[13];
-	uint8_t attr;
-	uint32_t fstCluster;
-	uint32_t size;
+    unsigned char name[13];
+    uint8_t attr;
+    uint32_t fstCluster;
+    uint32_t size;
 };
 
 void readFile(FAT32_Metadata infoFat, uint32_t dirCluster, uint8_t* buffer, int bufferSize);
