@@ -1,7 +1,7 @@
 #include "interrupt_handlers.h"
 
 extern proc* current;
-extern void dummy_handler(void);
+extern void time_handler_wrapper(void);
 extern void keyboard_handler_wrapper(void);
 extern void pagefault_handler_wrapper(void);
 extern void syscall_handler_wrapper(void);
@@ -27,8 +27,12 @@ void setupIDTEntry(IDT_entry* IDTEntry, uint64_t handlerAddr, int privilege){
     IDTEntry->zero2       = 0;
 }
 
+void time_handler(void){
+}
+
 void setupIDTable(IDT_ptr *idt_ptr){
     setupIDTEntry(&IDTable[14], (uint64_t) pagefault_handler_wrapper, 0); //pagefault
+    setupIDTEntry(&IDTable[32], (uint64_t) time_handler_wrapper, 0); //custom interrupts
     setupIDTEntry(&IDTable[33], (uint64_t) keyboard_handler_wrapper, 0); //keyboard
     setupIDTEntry(&IDTable[48], (uint64_t) print_int_asm, 3); //custom interrupts
     setupIDTEntry(&IDTable[SYS_GETCHAR_INT], (uint64_t) sys_getchar_handler_wrapper, 3);
@@ -53,7 +57,7 @@ void setupPIC(){
     outb(0x21, 0x01); //enable 8086/88 mode
     outb(0xA1, 0x01);
     
-    outb(0x21, 0xFD); //unmask keyboard IRQ
+    outb(0x21, 0xFC); //unmask keyboard IRQ and time IRQ
     outb(0xA1, 0xFF);
 }
 

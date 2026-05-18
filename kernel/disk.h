@@ -7,8 +7,8 @@
 #include "fat32.h"
 
 typedef struct drive_info{
-	int channel;
-	uint8_t drive;
+    int channel;
+    uint8_t drive;
 } drive_info;
 
 void setupDrive();

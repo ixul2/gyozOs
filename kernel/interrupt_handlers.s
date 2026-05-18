@@ -1,6 +1,4 @@
-.globl dummy_handler, keyboard_handler_wrapper, pagefault_handler_wrapper, sys_getchar_handler_wrapper, print_int_asm, exception_return, sys_write_char_handler_wrapper, sys_list_files_handler_wrapper, sys_cursor_handler_wrapper;
-dummy_handler:
-    iretq
+.globl keyboard_handler_wrapper, time_handler_wrapper, pagefault_handler_wrapper, sys_getchar_handler_wrapper, print_int_asm, exception_return, sys_write_char_handler_wrapper, sys_list_files_handler_wrapper, sys_cursor_handler_wrapper;
     
 keyboard_handler_wrapper:
     pushq %rax
@@ -22,6 +20,10 @@ keyboard_handler_wrapper:
     popq %rdx
     popq %rcx
     popq %rax
+    iretq
+
+time_handler_wrapper:
+    call time_handler
     iretq
 
 print_int_asm:
