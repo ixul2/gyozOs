@@ -33,7 +33,6 @@ void setupIDTable(IDT_ptr *idt_ptr){
 	setupIDTEntry(&IDTable[48], (uint64_t) print_int_asm, 3); //custom interrupts
 	setupIDTEntry(&IDTable[SYS_GETCHAR_INT], (uint64_t) sys_getchar_handler_wrapper, 3);
 	setupIDTEntry(&IDTable[SYS_WRITE_CHAR_INT], (uint64_t) sys_write_char_handler_wrapper, 3);
-	setupIDTEntry(&IDTable[SYS_WRITE_INT], (uint64_t) sys_write_handler_wrapper, 3);
 	setupIDTEntry(&IDTable[SYS_LS_INT], (uint64_t) sys_ls_handler_wrapper, 3);
 	idt_ptr->base = (uint64_t) IDTable;
 	idt_ptr->limit = sizeof(IDTable)-1;
@@ -66,14 +65,10 @@ void setupInterrupts(){
 }
 
 void sys_write_char_handler(registers_t *reg) {
-	shell_print_char((char)reg->reg_rdi);
+	shell_print_char((int)reg->reg_rsi, (char)reg->reg_rdi);
 	run(current);
 }
 
-void sys_write_handler(registers_t *reg) {
-	shell_print((char*)reg->reg_rdi);
-	run(current);
-}
 
 void sys_getchar_handler(registers_t *reg) {
 	while(!key_ready){
@@ -101,9 +96,6 @@ void exception(registers_t* reg){
 			sys_write_char_handler(reg);
 			break;
 
-		case SYS_WRITE_INT:
-			sys_write_handler(reg);
-			break;
 		
 		case SYS_LS_INT:
 			sys_ls_handler();

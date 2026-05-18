@@ -1,6 +1,5 @@
 #include "shell.h"
 
-int cursor = 0;
 int is_shifted = 0;
 volatile int key_ready = 0;
 char last_key = 0;
@@ -20,24 +19,9 @@ void keyboard_handler(unsigned char c){
     }
 }
 
-void shell_print_char(char c){
+void shell_print_char(int cursor, char c){
     uint16_t *VGABuffer = (uint16_t*) 0xB8000;
-    if(c == '\n'){
-        cursor = cursor + 80 - (cursor % 80);
-    } else if(c == '\t'){
-        cursor += 4;
-    } else if (c == 0x0E){
-        VGABuffer[--cursor] = 0;
-    } else {
-        VGABuffer[cursor++] = 0x0F00 | c;
-    }
-}
-
-void shell_print(char* s){
-    int n = strlen(s);
-    for(int i = 0; i<n; i++){
-        shell_print_char(s[i]);
-    }
+    VGABuffer[cursor] = 0x0F00 | c;
 }
 
 int shell(){

@@ -7,7 +7,6 @@
 
 void keyboard_handler(unsigned char c);
 void wait_for_input(int);
-void shell_print_char(char);
-void shell_print(char*);
+void shell_print_char(int, char);
 int shell();
 #endif

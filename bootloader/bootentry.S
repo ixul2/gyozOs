@@ -1,58 +1,19 @@
 ###############################################################################
-# BOOT ENTRY POINT
-#
-#   After the BIOS initializes the hardware on startup or system reset,
-#   it loads the first 512-byte sector of the hard disk
-#   into physical addresses 0x7C00-0x7DFF.
-#   Then it jumps to address 0x7C00 and the OS starts running!
-#
-#   This file contains the code loaded at that address.
-#   The `boot_start` routine switches the CPU out of compatibility mode,
-#   then calls `boot` from `boot.cc` to finish the booting process.
-#
-#   There is no need to understand this code in detail!
-#   (You may stop reading now.)
-#
+# BOOT ENTRY POINT  (identity‑maps first 2 MiB only)
 ###############################################################################
 
+.code16
 
-###############################################################################
-# For Your Information: COMPATIBILITY MODES
-#
-#   The Intel x86 architecture has many compatibility modes, going back to
-#   the 8086, which supported only 16-bit addresses.  When the BIOS calls
-#   into the OS, it is running in the "most compatible" mode, 16-bit real
-#   mode. The machine acts like addresses are only 16 bits long,
-#   there's no paging support, and there isn't even any support for
-#   user-mode applications. The following weird magic transitions the
-#   processor to 64-bit mode and sets up a page table suitable for initial
-#   kernel execution.
-#
-###############################################################################
+.set SEGSEL_BOOT_CODE, 0x8
 
-
-
-.code16   # 16-bit machine code in real mode
-
-
-
-
-# Define some constants
-.set SEGSEL_BOOT_CODE, 0x8       # code segment selector
-
-.globl boot_start                               # Entry point
+.globl boot_start
 boot_start:
-        .code16                         # This runs in real mode
-        cli                             # Disable interrupts
-        cld                             # String operations increment
-
-        # All segments are initially 0.
-        # Set up the stack pointer, growing downward from 0x7c00.
+        .code16
+        cli
+        cld
         movw    $boot_start, %sp
 
 notify_bios64:
-        # Notify the BIOS (the machine's firmware) to optimize itself
-        # for x86-64 code. https://wiki.osdev.org/X86-64
         movw    $0xEC00, %ax
         movw    $2, %dx
         int     $0x15
@@ -64,79 +25,72 @@ notify_bios64:
         .set PTE_PS,128
 
 init_boot_pagetable:
-        # clear memory for boot page table
+        # clear memory for boot page table (L4 @ 0x1000, PDPT @ 0x2000, PD @ 0x3000)
         .set BOOT_PAGETABLE,0x1000
         movl    $BOOT_PAGETABLE, %edi
         xorl    %eax, %eax
-        movl    $(0x2000 >> 2), %ecx
+        movl    $(0x3000 >> 2), %ecx        # 3 pages = 0x3000 bytes
         rep stosl
 
-        # set up boot page table
-        # 0x1000: L4 page table; entries 0, 256, and 511 point to:
-        # 0x2000: L3 page table; entries 0 and 510 map 1st 1GB of physmem
-        # This is the minimal page table that maps all of
-        # low-canonical, high-canonical, and kernel-text addresses to
-        # the first 1GB of physical memory.
+        # --- L4 table at 0x1000 ---
+        # Entry 0  -> identity PDPT at 0x2000
         movl    $BOOT_PAGETABLE, %edi
-        leal    0x1000 + PTE_P + PTE_W(%edi), %ecx
-        movl    %ecx, (%edi)
-        movl    %ecx, 0x800(%edi)
-        movl    %ecx, 0xFF8(%edi)
-        movl    $(PTE_P + PTE_W + PTE_PS), -3(%ecx)
-        movl    $(PTE_P + PTE_W + PTE_PS), 0xFED(%ecx)
+        movl    $0x2000 + PTE_P + PTE_W, %ecx   # ecx = 0x2003
+        movl    %ecx, (%edi)                    # L4[0] = 0x2003
 
-        .set CR0_PE,0x1                 # protected mode enable
-        .set CR0_WP,0x10000             # write-protect
-        .set CR0_PG,0x80000000          # paging enable
+        # All other L4 entries remain 0 (no high‑canonical mappings)
+
+        # --- Identity PDPT at 0x2000 ---
+        # Entry 0  -> PD at 0x3000
+        movl    $0x2000, %edi
+        movl    $0x3000 + PTE_P + PTE_W, %ecx   # ecx = 0x3003
+        movl    %ecx, (%edi)                    # PDPT[0] = 0x3003
+
+        # --- Identity PD at 0x3000 ---
+        # Entry 0  -> 2 MiB page at physical 0x00000000
+        movl    $0x3000, %edi
+        movl    $(PTE_P + PTE_W + PTE_PS), %eax   # eax = 0x83
+        movl    %eax, (%edi)                     # PD[0] = 0x83 (phys 0, 2 MiB)
+
+        .set CR0_PE,0x1
+        .set CR0_WP,0x10000
+        .set CR0_PG,0x80000000
         .set CR4_PSE,0x10
         .set CR4_PAE,0x20
         .set MSR_IA32_EFER,0xC0000080
-        .set IA32_EFER_SCE,1            # enable syscall/sysret
-        .set IA32_EFER_LME,0x100        # enable 64-bit mode
+        .set IA32_EFER_SCE,1
+        .set IA32_EFER_LME,0x100
         .set IA32_EFER_NXE,0x800
 
-# Switch from real to protected mode:
-#   Up until now, there's been no protection, so we've gotten along perfectly
-#   well without explicitly telling the processor how to translate addresses.
-#   When we switch to protected mode, this is no longer true!
-#   We need at least to set up some "segments" that tell the processor it's
-#   OK to run code at any address, or write to any address.
-#   The `gdt` and `gdtdesc` tables below define these segments.
-#   This code loads them into the processor.
-#   We need this setup to ensure the transition to protected mode is smooth.
-
 real_to_prot:
-        movl    %cr4, %eax              # enable physical address extensions
+        movl    %cr4, %eax
         orl     $(CR4_PSE | CR4_PAE), %eax
         movl    %eax, %cr4
-        movl    %edi, %cr3
-	
-        movl    $MSR_IA32_EFER, %ecx    # turn on 64-bit mode
+        movl    $BOOT_PAGETABLE, %eax       # CR3 = 0x1000
+        movl    %eax, %cr3
+
+        movl    $MSR_IA32_EFER, %ecx
         rdmsr
         orl     $(IA32_EFER_LME | IA32_EFER_SCE | IA32_EFER_NXE), %eax
         wrmsr
 
-        movl    %cr0, %eax              # turn on protected mode
+        movl    %cr0, %eax
         orl     $(CR0_PE | CR0_WP | CR0_PG), %eax
         movl    %eax, %cr0
 
-        lgdt    gdtdesc + 6             # load GDT
+        lgdt    gdtdesc + 6
 
-        # CPU magic: jump to relocation, flush prefetch queue, and
-        # reload %cs.  Has the effect of just jmp to the next
-        # instruction, but simultaneously loads CS with
-        # $SEGSEL_BOOT_CODE.
+        # Jump to boot() (still identity‑mapped, safe within the 2 MiB window)
         ljmp $SEGSEL_BOOT_CODE, $boot
-       	
 
-# Segment descriptors
+# GDT (unchanged)
         .code32
-        .p2align 3                           # force 8 byte alignment
-gdt:    .word 0, 0, 0, 0                     # null
-        .word 0, 0                           # kernel code segment
+        .p2align 3
+gdt:    .word 0, 0, 0, 0
+        .word 0, 0
         .byte 0, 0x9A, 0x20, 0
 gdtdesc:
         .word 0, 0, 0
-        .word 0x0f                           # sizeof(gdt) - 1
-        .long gdt                            # address gdt
+        .word 0x0f
+        .long gdt
         .long 0

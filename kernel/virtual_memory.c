@@ -139,7 +139,7 @@ static page_t* get_page(pml4_t *pml4, uintptr_t addr, page_table_t* (*allocator)
 
         pml4->pages[pml4_index(addr)] =
             ((uintptr_t)pdpt & ~0xFFFUL)
-            | PTE_P | PTE_W | PTE_U;
+            | PTE_P | PTE_W;
         memset(pdpt, 0, PAGE_SIZE);
     }
     else
@@ -204,7 +204,6 @@ void change_pagetable(page_table_t *page_table){
 void init_virtual_memory()
 {
     segments_init();
-    init_framing();
     kernel_pagetable = &kernel_pagetables[0];
     memset(kernel_pagetables, 0, sizeof(kernel_pagetables));
     kernel_pagetables[0].pages[0] =
@@ -217,7 +216,9 @@ void init_virtual_memory()
     }
     for(uintptr_t i = 0x000000; i < MEM_SIZE; i += PAGE_SIZE)
         map_page(kernel_pagetable, i, i, PTE_P | PTE_W , NULL);
+    map_page(kernel_pagetable, (uintptr_t)0, (uintptr_t)0, PTE_P, NULL);
     change_pagetable(kernel_pagetable);
+    init_framing();
 }
 
 void pagefault_handler(uintptr_t addr){

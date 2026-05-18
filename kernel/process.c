@@ -1,5 +1,6 @@
 #include "process.h"
 
+extern page_table_t* kernel_pagetable;
 extern uint8_t _binary_userspace__obj_p_shell_bin_start[];
 extern uint8_t _binary_userspace__obj_p_shell_bin_end[];
 
