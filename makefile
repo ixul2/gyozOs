@@ -107,9 +107,9 @@ userspace/_obj/p_shell.o: userspace/p_shell.c
 
 userspace/_obj/p_shell.bin: userspace/_obj/p_shell.o
 	ld \
+		-e process_main \
 		-T userspace/link/p_shell.ld \
 		--oformat=binary \
-		-e process_main \
 		-o $@ \
 		$^
 
@@ -121,7 +121,6 @@ userspace/_obj/p_shell_embedded.o: userspace/_obj/p_shell.bin
 	ld \
 		-r \
 		-b binary \
-		-e process_main \
 		-o $@ \
 		$<
 

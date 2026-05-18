@@ -204,6 +204,7 @@ void change_pagetable(page_table_t *page_table){
 void init_virtual_memory()
 {
     segments_init();
+    init_framing();
     kernel_pagetable = &kernel_pagetables[0];
     memset(kernel_pagetables, 0, sizeof(kernel_pagetables));
     kernel_pagetables[0].pages[0] =
@@ -217,7 +218,6 @@ void init_virtual_memory()
     for(uintptr_t i = 0x000000; i < MEM_SIZE; i += PAGE_SIZE)
         map_page(kernel_pagetable, i, i, PTE_P | PTE_W , NULL);
     change_pagetable(kernel_pagetable);
-    init_framing();
 }
 
 void pagefault_handler(uintptr_t addr){
