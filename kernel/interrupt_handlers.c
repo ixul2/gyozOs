@@ -13,9 +13,15 @@ extern void sys_list_files_handler_wrapper(void);
 extern void sys_mkdir_handler_wrapper(void);
 extern void sys_cd_handler_wrapper(void);
 extern void sys_rm_handler_wrapper(void);
+extern void sys_kb_tim_handler_wrapper(void);
 extern volatile int key_ready;
 extern char last_key;
 extern void ls(void);
+
+extern int kb_tail;
+extern int kb_head;
+extern char kb_buffer[KB_BUFFER_SIZE];
+extern proc *keyboard_waiting;
 
 IDT_entry IDTable[256];
 
@@ -33,7 +39,7 @@ void setupIDTEntry(IDT_entry* IDTEntry, uint64_t handlerAddr, int privilege){
 void setupIDTable(IDT_ptr *idt_ptr){
     setupIDTEntry(&IDTable[14], (uint64_t) pagefault_handler_wrapper, 0); //pagefault
     setupIDTEntry(&IDTable[SYS_TIMER_INT], (uint64_t) time_handler_wrapper, 0);
-    setupIDTEntry(&IDTable[33], (uint64_t) keyboard_handler_wrapper, 0); //keyboard
+    setupIDTEntry(&IDTable[SYS_KB_INT], (uint64_t) keyboard_handler_wrapper, 0); //keyboard
     setupIDTEntry(&IDTable[48], (uint64_t) print_int_asm, 3); //custom interrupts
     setupIDTEntry(&IDTable[SYS_GETCHAR_INT], (uint64_t) sys_getchar_handler_wrapper, 3);
     setupIDTEntry(&IDTable[SYS_WRITE_CHAR_INT], (uint64_t) sys_write_char_handler_wrapper, 3);
@@ -42,6 +48,7 @@ void setupIDTable(IDT_ptr *idt_ptr){
     setupIDTEntry(&IDTable[SYS_MKDIR_INT], (uint64_t) sys_mkdir_handler_wrapper, 3);
     setupIDTEntry(&IDTable[SYS_CD_INT], (uint64_t) sys_cd_handler_wrapper, 3);
     setupIDTEntry(&IDTable[SYS_RM_INT], (uint64_t) sys_rm_handler_wrapper, 3);
+    setupIDTEntry(&IDTable[SYS_ENABLE_KB_TIM_INT], (uint64_t) sys_kb_tim_handler_wrapper, 3);
     idt_ptr->base = (uint64_t) IDTable;
     idt_ptr->limit = sizeof(IDTable)-1;
 }
@@ -60,7 +67,15 @@ void setupPIC(){
     outb(0x21, 0x01); //enable 8086/88 mode
     outb(0xA1, 0x01);
     
-    outb(0x21, 0xFD); //unmask keyboard IRQ and time IRQ
+    outb(0x43, 0x36);           // command byte
+    uint16_t divisor = 1193180 / 100;  // 1193180 Hz base frequency
+    outb(0x40, divisor & 0xFF);       // low byte
+    outb(0x40, divisor >> 8);         // high byte
+
+    outb(0x21, 0xFD);
+    outb(0xA1, 0xFF);
+
+    outb(0x21, 0xFF);   // mask all
     outb(0xA1, 0xFF);
 }
 
@@ -79,12 +94,17 @@ void sys_write_char_handler(registers_t *reg) {
 }
 
 
-void sys_getchar_handler(registers_t *reg) {
-    while(!key_ready){
-        asm volatile("sti; hlt; cli" ::: "memory");
+void sys_getchar_handler(void) {
+    proc* p = current;
+    if (kb_head == kb_tail) {
+        p->state = P_BLOCKED;
+        keyboard_waiting = current;
+        reschedule = 1;
+    } else {
+        char val = kb_buffer[kb_tail];
+        kb_tail = (kb_tail + 1) % KB_BUFFER_SIZE;
+        p->reg.reg_rax = val;
     }
-    key_ready = 0;
-    current->reg.reg_rax = last_key;
 }
 
 void sys_list_files_handler(registers_t *reg){
@@ -113,6 +133,7 @@ void sys_rm_handler(registers_t* reg){
 }
 
 void time_handler(registers_t* reg){
+    while(1);
     current->reg = *reg;
     reschedule = 1;
 }
@@ -122,7 +143,7 @@ void exception(registers_t* reg){
     change_pagetable(kernel_pagetable);
     switch(reg->reg_intno){
         case SYS_GETCHAR_INT:
-            sys_getchar_handler(reg);
+            sys_getchar_handler();
             break;
 
         case SYS_WRITE_CHAR_INT:
@@ -151,6 +172,15 @@ void exception(registers_t* reg){
 
         case SYS_TIMER_INT:
             time_handler(reg);
+            break;
+        
+        case SYS_KB_INT:
+            keyboard_handler();
+            break;
+        
+        case SYS_ENABLE_KB_TIM_INT:
+            outb(0x21, 0xFE);
+            outb(0x21, 0xFD);
             break;
     }
     if(!reschedule && current->state == P_RUNNABLE){

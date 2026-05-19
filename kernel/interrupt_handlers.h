@@ -9,6 +9,7 @@
 #include "fat32.h"
 
 #define SYS_TIMER_INT 32
+#define SYS_KB_INT 33
 #define SYS_GETCHAR_INT 0x80
 #define SYS_WRITE_CHAR_INT 0x81
 #define SYS_CURSOR_INT 0x82
@@ -16,6 +17,7 @@
 #define SYS_MKDIR_INT 0x84
 #define SYS_CD_INT 0x85
 #define SYS_RM_INT 0x86
+#define SYS_ENABLE_KB_TIM_INT 0x87
 
 void setupInterrupts(void);
 typedef struct IDT_entry IDT_entry;

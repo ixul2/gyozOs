@@ -26,6 +26,7 @@ int cursor;
 int backward_steps_to_make = 0;
 
 void process_main(){
+    asm volatile("int $0x87" ::: "cc", "memory");
     cmd_len = 0;
     cursor = 0;
     path[0] = '\0';

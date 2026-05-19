@@ -1,30 +1,13 @@
-.globl keyboard_handler_wrapper, time_handler_wrapper, pagefault_handler_wrapper, sys_getchar_handler_wrapper, print_int_asm, exception_return, sys_write_char_handler_wrapper, sys_list_files_handler_wrapper, sys_cursor_handler_wrapper, sys_mkdir_handler_wrapper, sys_cd_handler_wrapper, sys_rm_handler_wrapper;
+.globl keyboard_handler_wrapper, time_handler_wrapper, pagefault_handler_wrapper, sys_getchar_handler_wrapper, print_int_asm, exception_return, sys_write_char_handler_wrapper, sys_list_files_handler_wrapper, sys_cursor_handler_wrapper, sys_mkdir_handler_wrapper, sys_cd_handler_wrapper, sys_rm_handler_wrapper, sys_kb_tim_handler_wrapper;
     
-keyboard_handler_wrapper:
-    pushq %rax
-    pushq %rcx
-    pushq %rdx
-    
-    movq $0, %rax
-    inb $0x60, %al          # read scan code to clear PIC
-    
-    pushq %rdi             # calls keyboard_handler(keycode)
-    movq %rax, %rdi
-    call keyboard_handler
-    pop %rdi
-
-    mov $0x20, %dx          # PIC master command port
-    movb $0x20, %al         # EOI command
-    outb %al, %dx
-
-    popq %rdx
-    popq %rcx
-    popq %rax
-    iretq
-
 time_handler_wrapper:
     pushq $0
     pushq $32
+    jmp generic_exception_handler
+
+keyboard_handler_wrapper:
+    pushq $0
+    pushq $33
     jmp generic_exception_handler
 
 print_int_asm:
@@ -71,6 +54,11 @@ sys_cd_handler_wrapper:
 sys_rm_handler_wrapper:
     pushq $0
     pushq $0x86
+    jmp generic_exception_handler
+
+sys_kb_tim_handler_wrapper:
+    pushq $0
+    pushq $0x87
     jmp generic_exception_handler
 
 generic_exception_handler:

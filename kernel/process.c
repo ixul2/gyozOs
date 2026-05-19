@@ -54,7 +54,7 @@ void load_process(proc* p, int program) {
                  NULL);
     }
 
-    memcpy((void*)user_base, (int)prog.begin, bin_size);
+    memcpy((void*)user_base, prog.begin, bin_size);
 
     size_t last_page_off = bin_size & (PAGE_SIZE - 1);
     if (last_page_off != 0)
@@ -83,6 +83,7 @@ void init_processes(){
         init_process(&procs[i]);
     }
     load_process(&procs[PROC_NUMBER],PROC_NUMBER);
+    load_process(&procs[1],1);
 }
 
 void launch_shell(){
