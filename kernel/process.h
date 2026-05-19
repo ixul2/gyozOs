@@ -3,9 +3,6 @@
 
 #include "virtual_memory.h"
 
-#define PROCINIT_ALLOW_PROGRAMMED_IO 0x01
-#define PROCINIT_DISABLE_INTERRUPTS 0x02
-
 typedef struct {
     uint64_t reg_rax;
     uint64_t reg_rcx;
@@ -60,5 +57,6 @@ void run(proc *p);
 void init_process(proc* p);
 void init_processes(void);
 void launch_shell(void);
+void schedule(void);
 
 #endif

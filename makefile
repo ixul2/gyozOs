@@ -32,7 +32,7 @@ kernel_as_files := $(wildcard kernel/*.s)
 kernel_obj_as_files := $(patsubst kernel/%.s,kernel/_obj/assembly_%.o,$(kernel_as_files))
 
 
-kernel/_obj/all_kernel: $(kernel_obj_c_files) $(kernel_obj_as_files) userspace/_obj/p_shell_embedded.o
+kernel/_obj/all_kernel: $(kernel_obj_c_files) $(kernel_obj_as_files) userspace/_obj/p_shell_embedded.o userspace/_obj/p_nano_embedded.o
 	ld -T kernel/link/kernel.ld -e kernel -o $@ $^
 
 
@@ -122,6 +122,47 @@ userspace/_obj/p_shell.bin: userspace/_obj/p_shell.elf
 # =========================================================
 
 userspace/_obj/p_shell_embedded.o: userspace/_obj/p_shell.bin
+	ld \
+		-r \
+		-b binary \
+		-o $@ \
+		$<
+
+# =========================================================
+# Userspace : p_nano
+# =========================================================
+
+userspace/_obj/p_nano.o: userspace/p_nano.c
+	mkdir -p userspace/_obj
+	gcc \
+		-ffreestanding \
+		-fno-pie \
+		-fno-pic \
+		-m64 \
+		-c \
+		-o $@ $<
+
+# Link to an ELF first (so we keep all section headers)
+userspace/_obj/p_nano.elf: userspace/_obj/p_nano.o
+	ld \
+		-e process_main \
+		-T userspace/link/p_nano.ld \
+		-o $@ \
+		$^
+
+# Convert ELF to raw binary, forcing .bss to be included as zero bytes
+userspace/_obj/p_nano.bin: userspace/_obj/p_nano.elf
+	objcopy \
+		-O binary \
+		--set-section-flags .bss=alloc,load,contents \
+		$< \
+		$@
+
+# =========================================================
+# Embed p_nano.bin into kernel
+# =========================================================
+
+userspace/_obj/p_nano_embedded.o: userspace/_obj/p_nano.bin
 	ld \
 		-r \
 		-b binary \

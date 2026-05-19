@@ -184,11 +184,9 @@ void setupDrive(){
 int file_ind = 0;
 
 int list_files(char* buffer){
-    FAT32_entry dir1;
     FAT32_entry entry;
-    getMetadataFileFromDirectory(infoFat, currentCluster, 0, &dir1);
     while(1){
-        getMetadataFileFromDirectory(infoFat, dir1.fstCluster, file_ind, &entry);
+        getMetadataFileFromDirectory(infoFat, currentCluster, file_ind, &entry);
         if (!isValidEntry(entry)){
             file_ind = 0;
             return -1;
@@ -203,9 +201,11 @@ int list_files(char* buffer){
 }
 
 void make_directory(char* name){
-    FAT32_entry dir1;
-    getMetadataFileFromDirectory(infoFat, currentCluster, 0, &dir1);
-    mkdir(infoFat, dir1.fstCluster, name);
+    mkdir(infoFat, currentCluster, name);
+}
+
+void remove_directory(int ind){
+    removeEntryFromDirectory(infoFat, currentCluster, ind);
 }
 
 void change_directory(int ind){

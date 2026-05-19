@@ -17,4 +17,5 @@ void writeDiskSector(drive_info drive, uintptr_t ramAddr, uint32_t sectorNumber)
 int list_files(char*);
 void make_directory(char*);
 void change_directory(int);
+void remove_directory(int);
 #endif

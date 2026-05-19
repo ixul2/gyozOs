@@ -5,6 +5,7 @@ static inline char sys_getchar(void);
 static inline void sys_cursor(void);
 static inline void sys_mkdir(void);
 static inline void sys_cd(int);
+static inline void sys_rm(int);
 
 void sys_ls(void);
 void process_cmd(void);
@@ -16,9 +17,10 @@ void scroll(void);
 #define SCREEN_SIZE 80*25
 
 char cmd[BUFF_LEN];
+int cmd_len;
 static char screen[SCREEN_SIZE];
 char path[51];
-int cmd_len;
+int path_len;
 int cmd_ind;
 int cursor;
 int backward_steps_to_make = 0;
@@ -83,7 +85,7 @@ void process_main(){
                 }
             }
         }
-    }
+    } 
 }
 
 char cmd1[BUFF_LEN+1];
@@ -93,26 +95,6 @@ int cmd2_len;
 char cmd3[BUFF_LEN+1];
 int cmd3_len;
 int too_many;
-
-void add_point_to_name(char* name, int len){
-    int i = len-1;
-    while(name[i] != '.' && i>= 0){
-        i--;
-    }
-    if(i<0){
-        name[len] = '.';
-        for(int j = 0; j<3; j++){
-            name[len + 1 + j] = ' ';
-        }
-        name[len + 4] = '\0';
-    } else if(3-(len-1-i) > 0){
-        int diff = 3 - (len-1-i);
-        for(int j = len; j<len+diff; j++){
-            name[j] = ' ';
-        }
-        name[len+diff] = '\0';
-    }
-}
 
 void parse_cmd(void){
     cmd1_len = 0;
@@ -204,13 +186,19 @@ void process_cmd(void){
         if(cmd2_len != 0){
             sys_write("Too many arguments\n");
         } else {
-            sys_write("Availables commands: ls help clean\n");
+            sys_write("Availables commands: ls help clean cd mkdir rm\n");
         }
     } else if (cmd2_len != 0 && cmd3_len == 0 && strcmp(cmd1,"mkdir") == 0) {
         if(cmd3_len != 0){
             sys_write("Too many arguments\n");
         } else {
-            sys_mkdir();
+            int ind = ind_of_file_in_current_directory(cmd2);
+            if(ind != -1){
+                sys_write(cmd2);
+                sys_write(" already exists\n");
+            } else {
+                sys_mkdir();
+            }
         }
     } else if (cmd2_len != 0 && cmd3_len == 0 && strcmp(cmd1,"cd") == 0){
         if(cmd3_len != 0){
@@ -220,7 +208,30 @@ void process_cmd(void){
             if(ind == -1){
                 sys_write(cmd2); sys_write(" doesn't exist\n");
             } else {
+                if(strcmp(cmd2,"..") == 0){
+                    while(path_len > 0 && path[path_len] != '\\'){
+                        path_len--;
+                    }
+                    path[path_len] = '\0';
+                } else if(strcmp(cmd2,".") != 0){
+                    path[path_len++] = '\\';
+                    for(int i = 0; i<cmd2_len; i++){
+                        path[path_len++] = cmd2[i];
+                    }
+                    path[path_len] = '\0';
+                }
                 sys_cd(ind);
+            }
+        }
+    } else if (cmd2_len != 0 && cmd3_len == 0 && strcmp(cmd1,"rm") == 0){
+        if(cmd3_len != 0){
+            sys_write("Too many arguments\n");
+        } else {
+            int ind = ind_of_file_in_current_directory(cmd2);
+            if(ind == -1){
+                sys_write(cmd2); sys_write(" doesn't exist\n");
+            } else {
+                sys_rm(ind);
             }
         }
     } else {
@@ -330,6 +341,13 @@ void sys_mkdir(){
 
 void sys_cd(int ind){
     asm volatile ("int $0x85"
+        :
+        : "D"(ind)
+        : "cc", "memory");
+}
+
+void sys_rm(int ind){
+    asm volatile ("int $0x86"
         :
         : "D"(ind)
         : "cc", "memory");

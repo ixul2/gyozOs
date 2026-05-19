@@ -3,6 +3,8 @@
 extern page_table_t* kernel_pagetable;
 extern uint8_t _binary_userspace__obj_p_shell_bin_start[];
 extern uint8_t _binary_userspace__obj_p_shell_bin_end[];
+extern uint8_t _binary_userspace__obj_p_nano_bin_start[];
+extern uint8_t _binary_userspace__obj_p_nano_bin_end[];
 
 static proc procs[PROC_NUMBER];
 proc* current;
@@ -92,4 +94,12 @@ void run(proc *p) {
 
 spinloop:
   goto spinloop; // should never get here
+}
+
+void schedule(){
+    int id = (current->id+1)%PROC_NUMBER;
+    while(!procs[id].state == P_RUNNABLE){
+        id = (id+1)%PROC_NUMBER;
+    }
+    run(&procs[id]);
 }

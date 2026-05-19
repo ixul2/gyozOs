@@ -8,12 +8,14 @@
 #include "shell.h"
 #include "fat32.h"
 
+#define SYS_TIMER_INT 32
 #define SYS_GETCHAR_INT 0x80
 #define SYS_WRITE_CHAR_INT 0x81
 #define SYS_CURSOR_INT 0x82
 #define SYS_LIST_FILES_INT 0x83
 #define SYS_MKDIR_INT 0x84
 #define SYS_CD_INT 0x85
+#define SYS_RM_INT 0x86
 
 void setupInterrupts(void);
 typedef struct IDT_entry IDT_entry;
