@@ -83,6 +83,7 @@ drive_info activeDrive;
 FAT32_Metadata infoFat;
 uint32_t currentCluster;
 
+
 void setupDrive(){
     foundDisk = false;
     for (int activeDriveIndex = 0; activeDriveIndex < 3; activeDriveIndex++){
@@ -181,6 +182,7 @@ void setupDrive(){
   console_print(10, 0, read);*/
 }
 
+
 int file_ind = 0;
 
 int list_files(char* buffer){
@@ -199,7 +201,6 @@ int list_files(char* buffer){
         file_ind++;
     }
 }
-
 void make_directory(char* name){
     mkdir(infoFat, currentCluster, name);
 }
@@ -214,3 +215,4 @@ void change_directory(int ind){
     currentCluster = entry.fstCluster;
     file_ind = 0;
 }
+
