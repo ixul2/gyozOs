@@ -83,6 +83,7 @@ drive_info activeDrive;
 FAT32_Metadata infoFat;
 uint32_t currentCluster;
 
+
 void setupDrive(){
     foundDisk = false;
     for (int activeDriveIndex = 0; activeDriveIndex < 3; activeDriveIndex++){
@@ -181,14 +182,14 @@ void setupDrive(){
   console_print(10, 0, read);*/
 }
 
+
 int file_ind = 0;
 
 int list_files(char* buffer){
     FAT32_entry dir1;
     FAT32_entry entry;
-    getMetadataFileFromDirectory(infoFat, currentCluster, 0, &dir1);
     while(1){
-        getMetadataFileFromDirectory(infoFat, dir1.fstCluster, file_ind, &entry);
+        getMetadataFileFromDirectory(infoFat, currentCluster, file_ind, &entry);
         if (!isValidEntry(entry)){
             file_ind = 0;
             return -1;
@@ -201,11 +202,8 @@ int list_files(char* buffer){
         file_ind++;
     }
 }
-
 void make_directory(char* name){
-    FAT32_entry dir1;
-    getMetadataFileFromDirectory(infoFat, currentCluster, 0, &dir1);
-    mkdir(infoFat, dir1.fstCluster, name);
+    mkdir(infoFat, currentCluster, name);
 }
 
 void change_directory(int ind){
@@ -214,3 +212,4 @@ void change_directory(int ind){
     currentCluster = entry.fstCluster;
     file_ind = 0;
 }
+

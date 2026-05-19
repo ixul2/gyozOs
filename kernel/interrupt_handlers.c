@@ -34,7 +34,7 @@ void time_handler(void){
 
 void setupIDTable(IDT_ptr *idt_ptr){
     setupIDTEntry(&IDTable[14], (uint64_t) pagefault_handler_wrapper, 0); //pagefault
-    setupIDTEntry(&IDTable[32], (uint64_t) time_handler_wrapper, 0); //custom interrupts
+    setupIDTEntry(&IDTable[32], (uint64_t) time_handler_wrapper, 0); //clock
     setupIDTEntry(&IDTable[33], (uint64_t) keyboard_handler_wrapper, 0); //keyboard
     setupIDTEntry(&IDTable[48], (uint64_t) print_int_asm, 3); //custom interrupts
     setupIDTEntry(&IDTable[SYS_GETCHAR_INT], (uint64_t) sys_getchar_handler_wrapper, 3);
