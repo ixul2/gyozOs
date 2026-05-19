@@ -76,7 +76,6 @@ int reschedule = 0;
 
 void sys_write_char_handler(registers_t *reg) {
     shell_print_char((int)reg->reg_rsi, (char)reg->reg_rdi);
-    run(current);
 }
 
 
@@ -91,7 +90,6 @@ void sys_getchar_handler(registers_t *reg) {
 void sys_list_files_handler(registers_t *reg){
     int cont = list_files((char*)reg->reg_rdi);
     current->reg.reg_rax = cont;
-    run(current);
 }
 
 void sys_cursor_handler(registers_t *reg){
@@ -100,27 +98,23 @@ void sys_cursor_handler(registers_t *reg){
 
     outb(0x3D4, 0x0E);                // cursor location high byte
     outb(0x3D5, (uint8_t)((reg->reg_rdi >> 8) & 0xFF));
-    run(current);
 }
 
 void sys_mkdir_handler(registers_t* reg){
     make_directory((char*)reg->reg_rdi);
-    run(current);
 }
 
 void sys_cd_handler(registers_t* reg){
     change_directory((int)reg->reg_rdi);
-    run(current);
 }
 
 void sys_rm_handler(registers_t* reg){
     remove_directory((int)reg->reg_rdi);
-    run(current);
 }
 
 void time_handler(registers_t* reg){
     current->reg = *reg;
-    schedule();
+    reschedule = 1;
 }
 
 void exception(registers_t* reg){
@@ -162,6 +156,7 @@ void exception(registers_t* reg){
     if(!reschedule && current->state == P_RUNNABLE){
         run(current);
     } else {
+        reschedule = 0;
         schedule();
     }
 }

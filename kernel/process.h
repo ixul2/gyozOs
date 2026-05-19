@@ -50,7 +50,7 @@ typedef struct proc {
     page_table_t* page_table;
 } proc;
 
-#define PROC_NUMBER 8
+#define PROC_NUMBER 2
 
 void exception_return(registers_t *reg) __attribute__((noreturn));
 void run(proc *p);

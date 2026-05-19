@@ -42,7 +42,8 @@ void process_main(){
                     }
                     cmd_ind--;
                     sys_write_char(--cursor, 0);
-                    screen[cursor] = 0;
+                    cmd[cmd_ind] = ' ';
+                    screen[cursor] = ' ';
                 }
             } else if(c == 1){
                 if(cmd_ind != 0){
@@ -231,7 +232,11 @@ void process_cmd(void){
             if(ind == -1){
                 sys_write(cmd2); sys_write(" doesn't exist\n");
             } else {
-                sys_rm(ind);
+                if(strcmp(cmd2,".") == 0 || strcmp(cmd2,"..") == 0){
+                    sys_write(cmd2); sys_write(" can't be removed\n");
+                } else {
+                    sys_rm(ind);
+                }
             }
         }
     } else {

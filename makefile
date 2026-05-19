@@ -32,7 +32,7 @@ kernel_as_files := $(wildcard kernel/*.s)
 kernel_obj_as_files := $(patsubst kernel/%.s,kernel/_obj/assembly_%.o,$(kernel_as_files))
 
 
-kernel/_obj/all_kernel: $(kernel_obj_c_files) $(kernel_obj_as_files) userspace/_obj/p_shell_embedded.o userspace/_obj/p_nano_embedded.o
+kernel/_obj/all_kernel: $(kernel_obj_c_files) $(kernel_obj_as_files) userspace/_obj/p_nano_embedded.o userspace/_obj/p_idle_embedded.o userspace/_obj/p_shell_embedded.o
 	ld -T kernel/link/kernel.ld -e kernel -o $@ $^
 
 
@@ -163,6 +163,47 @@ userspace/_obj/p_nano.bin: userspace/_obj/p_nano.elf
 # =========================================================
 
 userspace/_obj/p_nano_embedded.o: userspace/_obj/p_nano.bin
+	ld \
+		-r \
+		-b binary \
+		-o $@ \
+		$<
+
+# =========================================================
+# Userspace : p_idle
+# =========================================================
+
+userspace/_obj/p_idle.o: userspace/p_idle.c
+	mkdir -p userspace/_obj
+	gcc \
+		-ffreestanding \
+		-fno-pie \
+		-fno-pic \
+		-m64 \
+		-c \
+		-o $@ $<
+
+# Link to an ELF first (so we keep all section headers)
+userspace/_obj/p_idle.elf: userspace/_obj/p_idle.o
+	ld \
+		-e process_main \
+		-T userspace/link/p_idle.ld \
+		-o $@ \
+		$^
+
+# Convert ELF to raw binary, forcing .bss to be included as zero bytes
+userspace/_obj/p_idle.bin: userspace/_obj/p_idle.elf
+	objcopy \
+		-O binary \
+		--set-section-flags .bss=alloc,load,contents \
+		$< \
+		$@
+
+# =========================================================
+# Embed p_idle.bin into kernel
+# =========================================================
+
+userspace/_obj/p_idle_embedded.o: userspace/_obj/p_idle.bin
 	ld \
 		-r \
 		-b binary \

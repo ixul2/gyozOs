@@ -6,7 +6,7 @@
 #include "lib.h"
 #include "x86-64.h"
 #define VIRTUAL_MEMORY
-#define MEM_SIZE 0x200000
+#define MEM_SIZE 0x400000
 #define FRAME_NUMBER MEM_SIZE/PAGE_SIZE
 #define PAGE_TABLE_SIZE 512
 #define PAGE_SIZE 4096

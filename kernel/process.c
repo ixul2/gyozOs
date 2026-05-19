@@ -5,8 +5,10 @@ extern uint8_t _binary_userspace__obj_p_shell_bin_start[];
 extern uint8_t _binary_userspace__obj_p_shell_bin_end[];
 extern uint8_t _binary_userspace__obj_p_nano_bin_start[];
 extern uint8_t _binary_userspace__obj_p_nano_bin_end[];
+extern uint8_t _binary_userspace__obj_p_idle_bin_start[];
+extern uint8_t _binary_userspace__obj_p_idle_bin_end[];
 
-static proc procs[PROC_NUMBER];
+static proc procs[PROC_NUMBER + 1];
 proc* current;
 
 typedef struct ramimage {
@@ -16,7 +18,11 @@ typedef struct ramimage {
 
 ramimage ramimages[] = {
     {   .begin = _binary_userspace__obj_p_shell_bin_start,
-        .end = _binary_userspace__obj_p_shell_bin_end}
+        .end = _binary_userspace__obj_p_shell_bin_end },
+    {   .begin = _binary_userspace__obj_p_nano_bin_start,
+        .end = _binary_userspace__obj_p_nano_bin_end },
+    {   .begin = _binary_userspace__obj_p_idle_bin_start,
+        .end = _binary_userspace__obj_p_idle_bin_end },
 };
 
 void init_process(proc* p){
@@ -32,14 +38,13 @@ void init_process(proc* p){
 }
 
 void load_process(proc* p, int program) {
-    // program argument ignored – always load the embedded binary
-    (void)program;
+    ramimage prog = ramimages[program];
+    
 
-    size_t bin_size = (size_t)(_binary_userspace__obj_p_shell_bin_end -
-                               _binary_userspace__obj_p_shell_bin_start);
+    size_t bin_size = (size_t)((size_t)prog.end - (size_t)prog.begin);
     size_t pages_needed = (bin_size + PAGE_SIZE - 1) / PAGE_SIZE;
 
-    uintptr_t user_base = PROC_START_ADDR + p->id * PROC_SIZE;
+    uintptr_t user_base = PROC_START_ADDR + (p->id) * PROC_SIZE;
 
     for (size_t i = 0; i < pages_needed; i++) {
         map_page(p->page_table,
@@ -49,7 +54,7 @@ void load_process(proc* p, int program) {
                  NULL);
     }
 
-    memcpy((void*)user_base, _binary_userspace__obj_p_shell_bin_start, bin_size);
+    memcpy((void*)user_base, (int)prog.begin, bin_size);
 
     size_t last_page_off = bin_size & (PAGE_SIZE - 1);
     if (last_page_off != 0)
@@ -73,33 +78,34 @@ void load_process(proc* p, int program) {
 
 void init_processes(){
     memset((void*) procs, 0, sizeof(procs));
-    for(int i = 0; i<PROC_NUMBER; i++){
+    for(int i = 0; i <= PROC_NUMBER; i++){
         procs[i].id = i;
+        init_process(&procs[i]);
     }
+    load_process(&procs[PROC_NUMBER],PROC_NUMBER);
 }
 
 void launch_shell(){
-    init_processes();
-    init_process(&procs[0]);
     load_process(&procs[0],0);
     run(&procs[0]);
 }
 
 void run(proc *p) {
-  current = p;
-  // Load the process's current pagetable.
-  change_pagetable(p->page_table);
-
-  exception_return(&p->reg);
+    current = p;
+    // Load the process's current pagetable.
+    change_pagetable(p->page_table);
+    exception_return(&p->reg);
 
 spinloop:
-  goto spinloop; // should never get here
+    goto spinloop; // should never get here
 }
 
 void schedule(){
-    int id = (current->id+1)%PROC_NUMBER;
-    while(!procs[id].state == P_RUNNABLE){
-        id = (id+1)%PROC_NUMBER;
+    for(int i = 0; i<PROC_NUMBER; i++){
+        int id = (current->id + 1 + i)%PROC_NUMBER;
+        if(procs[id].state == P_RUNNABLE){
+            run(&procs[id]);
+        }
     }
-    run(&procs[id]);
+    run(&procs[PROC_NUMBER]);
 }
