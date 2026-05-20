@@ -18,6 +18,18 @@
 #define SYS_CD_INT 0x85
 #define SYS_RM_INT 0x86
 #define SYS_ENABLE_KB_TIM_INT 0x87
+#define SYS_YIELD_INT 0x88
+
+// Timer-related constants
+#define IO_TIMER1 0x040            /* 8253 Timer #1 */
+#define TIMER_MODE (IO_TIMER1 + 3) /* timer mode port */
+#define TIMER_SEL0 0x00            /* select counter 0 */
+#define TIMER_RATEGEN 0x04         /* mode 2, rate generator */
+#define TIMER_16BIT 0x30           /* r/w counter 16 bits, LSB first */
+
+// Timer frequency: (TIMER_FREQ/freq) generates a frequency of 'freq' Hz.
+#define TIMER_FREQ 1193182
+#define TIMER_DIV(x) ((TIMER_FREQ + (x) / 2) / (x))
 
 void setupInterrupts(void);
 typedef struct IDT_entry IDT_entry;

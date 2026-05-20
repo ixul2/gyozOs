@@ -1,4 +1,5 @@
 void process_main(){
+    asm volatile("int $0x87" ::: "cc", "memory");
     int i = 0;
     while(1){
         asm volatile ("int $0x81"

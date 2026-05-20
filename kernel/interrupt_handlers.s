@@ -1,4 +1,4 @@
-.globl keyboard_handler_wrapper, time_handler_wrapper, pagefault_handler_wrapper, sys_getchar_handler_wrapper, print_int_asm, exception_return, sys_write_char_handler_wrapper, sys_list_files_handler_wrapper, sys_cursor_handler_wrapper, sys_mkdir_handler_wrapper, sys_cd_handler_wrapper, sys_rm_handler_wrapper, sys_kb_tim_handler_wrapper;
+.globl keyboard_handler_wrapper, time_handler_wrapper, pagefault_handler_wrapper, sys_getchar_handler_wrapper, print_int_asm, exception_return, sys_write_char_handler_wrapper, sys_list_files_handler_wrapper, sys_cursor_handler_wrapper, sys_mkdir_handler_wrapper, sys_cd_handler_wrapper, sys_rm_handler_wrapper, sys_kb_tim_handler_wrapper, sys_yield_handler_wrapper;
     
 time_handler_wrapper:
     pushq $0
@@ -59,6 +59,11 @@ sys_rm_handler_wrapper:
 sys_kb_tim_handler_wrapper:
     pushq $0
     pushq $0x87
+    jmp generic_exception_handler
+
+sys_yield_handler_wrapper:
+    pushq $0
+    pushq $0x88
     jmp generic_exception_handler
 
 generic_exception_handler:

@@ -14,6 +14,7 @@ extern void sys_mkdir_handler_wrapper(void);
 extern void sys_cd_handler_wrapper(void);
 extern void sys_rm_handler_wrapper(void);
 extern void sys_kb_tim_handler_wrapper(void);
+extern void sys_yield_handler_wrapper(void);
 extern volatile int key_ready;
 extern char last_key;
 extern void ls(void);
@@ -49,6 +50,7 @@ void setupIDTable(IDT_ptr *idt_ptr){
     setupIDTEntry(&IDTable[SYS_CD_INT], (uint64_t) sys_cd_handler_wrapper, 3);
     setupIDTEntry(&IDTable[SYS_RM_INT], (uint64_t) sys_rm_handler_wrapper, 3);
     setupIDTEntry(&IDTable[SYS_ENABLE_KB_TIM_INT], (uint64_t) sys_kb_tim_handler_wrapper, 3);
+    setupIDTEntry(&IDTable[SYS_YIELD_INT], (uint64_t) sys_yield_handler_wrapper, 3);
     idt_ptr->base = (uint64_t) IDTable;
     idt_ptr->limit = sizeof(IDTable)-1;
 }
@@ -67,13 +69,9 @@ void setupPIC(){
     outb(0x21, 0x01); //enable 8086/88 mode
     outb(0xA1, 0x01);
     
-    outb(0x43, 0x36);           // command byte
-    uint16_t divisor = 1193180 / 100;  // 1193180 Hz base frequency
-    outb(0x40, divisor & 0xFF);       // low byte
-    outb(0x40, divisor >> 8);         // high byte
-
-    outb(0x21, 0xFD);
-    outb(0xA1, 0xFF);
+    outb(TIMER_MODE, TIMER_SEL0 | TIMER_RATEGEN | TIMER_16BIT);
+    outb(IO_TIMER1, TIMER_DIV(100) % 256);
+    outb(IO_TIMER1, TIMER_DIV(100) / 256);
 
     outb(0x21, 0xFF);   // mask all
     outb(0xA1, 0xFF);
@@ -84,7 +82,7 @@ void setupInterrupts(){
     setupIDTable(&idt_ptr);
     setupPIC();
     __asm__ __volatile__("lidt %0" : : "m"(idt_ptr)); //tell processor where IDT is
-    __asm__ __volatile__("sti"); 
+    __asm__ __volatile__("sti" :::);    
 }
 
 int reschedule = 0;
@@ -98,7 +96,7 @@ void sys_getchar_handler(void) {
     proc* p = current;
     if (kb_head == kb_tail) {
         p->state = P_BLOCKED;
-        keyboard_waiting = current;
+        keyboard_waiting = p;
         reschedule = 1;
     } else {
         char val = kb_buffer[kb_tail];
@@ -132,9 +130,12 @@ void sys_rm_handler(registers_t* reg){
     remove_directory((int)reg->reg_rdi);
 }
 
-void time_handler(registers_t* reg){
-    while(1);
-    current->reg = *reg;
+void time_handler(){
+    reschedule = 1;
+    outb(0x20, 0x20);
+}
+
+void sys_yield(){
     reschedule = 1;
 }
 
@@ -171,7 +172,7 @@ void exception(registers_t* reg){
             break;
 
         case SYS_TIMER_INT:
-            time_handler(reg);
+            time_handler();
             break;
         
         case SYS_KB_INT:
@@ -179,8 +180,12 @@ void exception(registers_t* reg){
             break;
         
         case SYS_ENABLE_KB_TIM_INT:
-            outb(0x21, 0xFE);
-            outb(0x21, 0xFD);
+            outb(0x21, 0xFC);
+            outb(0xA1, 0xFF);
+            break;
+
+        case SYS_YIELD_INT:
+            sys_yield();
             break;
     }
     if(!reschedule && current->state == P_RUNNABLE){

@@ -85,7 +85,6 @@ void init_processes(){
         init_process(&procs[i]);
     }
     load_process(&procs[0],0);
-    load_process(&procs[2],2);
 }
 
 void launch_shell(){
@@ -105,7 +104,7 @@ spinloop:
 
 void schedule(){
     int id = current->id;
-    for(int i = 0; i<PROC_NUMBER-1; i++){
+    for(int i = 0; i<PROC_NUMBER + 1; i++){
         id = (id + 1)%PROC_NUMBER;
         if(id == 0){
             id = 1;
