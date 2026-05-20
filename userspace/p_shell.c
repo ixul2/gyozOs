@@ -102,13 +102,11 @@ char cmd2[BUFF_LEN+4];
 int cmd2_len;
 char cmd3[BUFF_LEN+1];
 int cmd3_len;
-int too_many;
 
 void parse_cmd(void){
     cmd1_len = 0;
     cmd2_len = 0;
     cmd3_len = 0;
-    too_many = 0;
     int ind = 0;
     while(ind < cmd_len && cmd[ind] == ' '){
         ind++;
@@ -131,18 +129,12 @@ void parse_cmd(void){
     while(ind < cmd_len && cmd[ind] == ' '){
         ind++;
     }
-    while(ind < cmd_len && cmd[ind] != ' '){
+    while(ind < cmd_len){
         cmd3[cmd3_len] = cmd[ind];
         cmd3_len++;
         ind++;
     }
     cmd3[cmd3_len] = '\0';
-    while(ind < cmd_len && cmd[ind] == ' '){
-        ind++;
-    }
-    if(cmd[ind] != '\0'){
-        too_many = 1;
-    }
 }
 
 char file_name_return[51];
@@ -261,7 +253,7 @@ void process_cmd(void){
             }
         }
     } else if (strcmp(cmd1,"write") == 0){
-        if(cmd2 < 4 || cmd2[cmd2_len-1] != 't' || cmd2[cmd2_len-2] != 'x' || cmd2[cmd2_len-3] != 't' || cmd2[cmd2_len-4] != '.'){
+        if(cmd2_len < 4 || cmd2[cmd2_len-1] != 't' || cmd2[cmd2_len-2] != 'x' || cmd2[cmd2_len-3] != 't' || cmd2[cmd2_len-4] != '.'){
             sys_write("The file must end by \".txt\"\n");
         } else {
             int ind = ind_of_file_in_current_directory(cmd2);
@@ -271,7 +263,7 @@ void process_cmd(void){
             sys_write_file();
         }
     } else if (cmd3_len == 0 && strcmp(cmd1,"read") == 0){
-        if(cmd2 < 4 || cmd2[cmd2_len-1] != 't' || cmd2[cmd2_len-2] != 'x' || cmd2[cmd2_len-3] != 't' || cmd2[cmd2_len-4] != '.'){
+        if(cmd2_len < 4 || cmd2[cmd2_len-1] != 't' || cmd2[cmd2_len-2] != 'x' || cmd2[cmd2_len-3] != 't' || cmd2[cmd2_len-4] != '.'){
             sys_write("The file must end by \".txt\"\n");
         } else {
             int ind = ind_of_file_in_current_directory(cmd2);
