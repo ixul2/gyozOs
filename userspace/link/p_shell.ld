@@ -1,7 +1,7 @@
 ENTRY(process_main)
 
 SECTIONS {
-    . = 0x100000;
+    . = 0x140000;
 
     .text : { *(.text) }
 
