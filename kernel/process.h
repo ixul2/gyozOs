@@ -58,5 +58,7 @@ void init_process(proc* p);
 void init_processes(void);
 void launch_shell(void);
 void schedule(void);
+void sys_start(registers_t* reg);
+void sys_stop(registers_t* reg);
 
 #endif

@@ -3,8 +3,10 @@
 extern page_table_t* kernel_pagetable;
 extern uint8_t _binary_userspace__obj_p_shell_bin_start[];
 extern uint8_t _binary_userspace__obj_p_shell_bin_end[];
-extern uint8_t _binary_userspace__obj_p_nano_bin_start[];
-extern uint8_t _binary_userspace__obj_p_nano_bin_end[];
+extern uint8_t _binary_userspace__obj_p_dummy1_bin_start[];
+extern uint8_t _binary_userspace__obj_p_dummy1_bin_end[];
+extern uint8_t _binary_userspace__obj_p_dummy2_bin_start[];
+extern uint8_t _binary_userspace__obj_p_dummy2_bin_end[];
 extern uint8_t _binary_userspace__obj_p_idle_bin_start[];
 extern uint8_t _binary_userspace__obj_p_idle_bin_end[];
 
@@ -21,8 +23,10 @@ ramimage ramimages[] = {
         .end = _binary_userspace__obj_p_idle_bin_end },
     {   .begin = _binary_userspace__obj_p_shell_bin_start,
         .end = _binary_userspace__obj_p_shell_bin_end },
-    {   .begin = _binary_userspace__obj_p_nano_bin_start,
-        .end = _binary_userspace__obj_p_nano_bin_end }
+    {   .begin = _binary_userspace__obj_p_dummy1_bin_start,
+        .end = _binary_userspace__obj_p_dummy1_bin_end },
+    {   .begin = _binary_userspace__obj_p_dummy2_bin_start,
+        .end = _binary_userspace__obj_p_dummy2_bin_end }
 };
 
 void init_process(proc* p){
@@ -114,4 +118,16 @@ void schedule(){
         }
     }
     run(&procs[0]);
+}
+
+void sys_start(registers_t* reg){
+    assert(reg->reg_rdi == 2 || reg->reg_rdi == 3,"Not a startable process");
+    assert(procs[reg->reg_rdi].state == P_FREE,"Process already running");
+    load_process(&procs[reg->reg_rdi],reg->reg_rdi);
+}
+
+void sys_stop(registers_t* reg){
+    assert(reg->reg_rdi == 2 || reg->reg_rdi == 3,"Not a stoppable process");
+    assert(procs[reg->reg_rdi].state == P_RUNNABLE,"Process already running");
+    procs[reg->reg_rdi].state = P_FREE;
 }

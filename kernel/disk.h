@@ -18,4 +18,6 @@ int list_files(char*);
 void make_directory(char*);
 void change_directory(int);
 void remove_directory(int);
+void write_file(char* content, int len, char* name);
+void read_file(int ind, char* buffer);
 #endif

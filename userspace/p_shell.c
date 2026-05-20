@@ -6,6 +6,10 @@ static inline void sys_cursor(void);
 static inline void sys_mkdir(void);
 static inline void sys_cd(int);
 static inline void sys_rm(int);
+static inline void sys_start(int);
+static inline void sys_stop(int);
+static inline void sys_write_file();
+static inline void sys_read_file(int);
 
 void sys_ls(void);
 void process_cmd(void);
@@ -24,6 +28,8 @@ int path_len;
 int cmd_ind;
 int cursor;
 int backward_steps_to_make = 0;
+int process0_running = 0;
+int process1_running = 0;
 
 void process_main(){
     asm volatile("int $0x87" ::: "cc", "memory");
@@ -171,42 +177,26 @@ void process_cmd(void){
     parse_cmd();
     if(cmd1_len == 0){
         
-    } else if(strcmp(cmd1,"ls") == 0){
-        if(cmd2_len != 0){
-            sys_write("Too many arguments\n");
-        } else {
-            sys_ls();   
-        }
+    } else if(cmd2_len == 0, strcmp(cmd1,"ls") == 0){
+        sys_ls();   
     } else if(cmd2_len == 0 && strcmp(cmd1,"clean") == 0){
-        if(cmd2_len != 0){
-            sys_write("Too many arguments\n");
-        } else {
-            clear_screen();
-            set_cursor(0);
-        }
+        clear_screen();
+        set_cursor(0);
     } else if (cmd2_len == 0 && strcmp(cmd1,"help") == 0){
-        if(cmd2_len != 0){
-            sys_write("Too many arguments\n");
-        } else {
-            sys_write("Availables commands: ls help clean cd mkdir rm\n");
-        }
+        sys_write("Availables commands: ls help clean cd mkdir rm start stop write read\n");
     } else if (cmd2_len != 0 && cmd3_len == 0 && strcmp(cmd1,"mkdir") == 0) {
-        if(cmd3_len != 0){
-            sys_write("Too many arguments\n");
+        int ind = ind_of_file_in_current_directory(cmd2);
+        if(ind != -1){
+            sys_write(cmd2);
+            sys_write(" already exists\n");
         } else {
-            int ind = ind_of_file_in_current_directory(cmd2);
-            if(ind != -1){
-                sys_write(cmd2);
-                sys_write(" already exists\n");
-            } else {
-                sys_mkdir();
-            }
+            sys_mkdir();
         }
     } else if (cmd2_len != 0 && cmd3_len == 0 && strcmp(cmd1,"cd") == 0){
-        if(cmd3_len != 0){
-            sys_write("Too many arguments\n");
+        if(cmd_len >= 4 && cmd2[cmd2_len-1] == 't' && cmd2[cmd2_len-2] == 'x' && cmd2[cmd2_len-3] == 't' && cmd2[cmd2_len-4] == '.'){
+            sys_write("Can't enter a text file\n");
         } else {
-            int ind = ind_of_file_in_current_directory(cmd2);
+                int ind = ind_of_file_in_current_directory(cmd2);
             if(ind == -1){
                 sys_write(cmd2); sys_write(" doesn't exist\n");
             } else {
@@ -223,21 +213,75 @@ void process_cmd(void){
                     path[path_len] = '\0';
                 }
                 sys_cd(ind);
-            }
+            }    
         }
     } else if (cmd2_len != 0 && cmd3_len == 0 && strcmp(cmd1,"rm") == 0){
-        if(cmd3_len != 0){
-            sys_write("Too many arguments\n");
+        int ind = ind_of_file_in_current_directory(cmd2);
+        if(ind == -1){
+            sys_write(cmd2); sys_write(" doesn't exist\n");
+        } else {
+            if(strcmp(cmd2,".") == 0 || strcmp(cmd2,"..") == 0){
+                sys_write(cmd2); sys_write(" can't be removed\n");
+            } else {
+                sys_rm(ind);
+            }
+        }
+    } else if (cmd3_len == 0 && strcmp(cmd1,"start") == 0 && strcmp(cmd2,"0") == 0){
+        if(process0_running){
+            sys_write("Process 0 is already running\n");
+        } else {
+            process0_running = 1;
+            sys_start(2);
+        }
+    } else if (cmd3_len == 0 && strcmp(cmd1,"start") == 0 && strcmp(cmd2,"1") == 0){
+        if(process1_running){
+            sys_write("Process 1 is already running\n");
+        } else {
+            process1_running = 1;
+            sys_start(3);
+        }
+    } else if (cmd3_len == 0 && strcmp(cmd1,"stop") == 0 && strcmp(cmd2,"0") == 0){
+        if(!process0_running){
+            sys_write("Process 0 is not running\n");
+        } else {
+            process0_running = 0;
+            sys_stop(2);
+            for(int i = 0; i<25; i++){
+                sys_write_char(80*i + 76,' ');
+            }
+        }
+    } else if (cmd3_len == 0 && strcmp(cmd1,"stop") == 0 && strcmp(cmd2,"1") == 0){
+        if(!process1_running){
+            sys_write("Process 1 is not running\n");
+        } else {
+            process1_running = 0;
+            sys_stop(3);
+            for(int i = 0; i<25; i++){
+                sys_write_char(80*i + 78,' ');
+            }
+        }
+    } else if (strcmp(cmd1,"write") == 0){
+        if(cmd2 < 4 || cmd2[cmd2_len-1] != 't' || cmd2[cmd2_len-2] != 'x' || cmd2[cmd2_len-3] != 't' || cmd2[cmd2_len-4] != '.'){
+            sys_write("The file must end by \".txt\"\n");
+        } else {
+            int ind = ind_of_file_in_current_directory(cmd2);
+            if(ind != -1){
+                sys_rm(ind);
+            }
+            sys_write_file();
+        }
+    } else if (cmd3_len == 0 && strcmp(cmd1,"read") == 0){
+        if(cmd2 < 4 || cmd2[cmd2_len-1] != 't' || cmd2[cmd2_len-2] != 'x' || cmd2[cmd2_len-3] != 't' || cmd2[cmd2_len-4] != '.'){
+            sys_write("The file must end by \".txt\"\n");
         } else {
             int ind = ind_of_file_in_current_directory(cmd2);
             if(ind == -1){
-                sys_write(cmd2); sys_write(" doesn't exist\n");
+                sys_write(cmd2);
+                sys_write(" doesn't exist\n");
             } else {
-                if(strcmp(cmd2,".") == 0 || strcmp(cmd2,"..") == 0){
-                    sys_write(cmd2); sys_write(" can't be removed\n");
-                } else {
-                    sys_rm(ind);
-                }
+                sys_read_file(ind);
+                sys_write(cmd3);
+                sys_write("\n");
             }
         }
     } else {
@@ -356,5 +400,33 @@ void sys_rm(int ind){
     asm volatile ("int $0x86"
         :
         : "D"(ind)
+        : "cc", "memory");
+}
+
+void sys_start(int prog){
+    asm volatile ("int $0x89"
+        :
+        : "D"(prog)
+        : "cc", "memory");
+}
+
+void sys_stop(int prog){
+    asm volatile ("int $0x8A"
+        :
+        : "D"(prog)
+        : "cc", "memory");
+}
+
+void sys_write_file(){
+    asm volatile ("int $0x8C"
+        :
+        : "D"(cmd3), "S"(cmd3_len), "d"(cmd2)
+        : "cc", "memory");
+}
+
+void sys_read_file(int ind){
+    asm volatile ("int $0x8B"
+        :
+        : "D"(ind), "S"(cmd3)
         : "cc", "memory");
 }

@@ -216,3 +216,12 @@ void change_directory(int ind){
     file_ind = 0;
 }
 
+void read_file(int ind, char* buffer){
+    FAT32_entry entry;
+    getMetadataFileFromDirectory(infoFat, currentCluster, ind, &entry);
+    readFile(infoFat, entry.fstCluster, buffer, entry.size);
+}
+
+void write_file(char* content, int len, char* name){
+    writeFile(infoFat, currentCluster, name, content, len);
+}

@@ -1,5 +1,6 @@
 #include "interrupt_handlers.h"
 
+extern proc procs[PROC_NUMBER];
 extern proc* current;
 extern void time_handler_wrapper(void);
 extern void keyboard_handler_wrapper(void);
@@ -15,6 +16,10 @@ extern void sys_cd_handler_wrapper(void);
 extern void sys_rm_handler_wrapper(void);
 extern void sys_kb_tim_handler_wrapper(void);
 extern void sys_yield_handler_wrapper(void);
+extern void sys_start_handler_wrapper(void);
+extern void sys_stop_handler_wrapper(void);
+extern void sys_read_handler_wrapper(void);
+extern void sys_write_handler_wrapper(void);
 extern volatile int key_ready;
 extern char last_key;
 extern void ls(void);
@@ -51,6 +56,10 @@ void setupIDTable(IDT_ptr *idt_ptr){
     setupIDTEntry(&IDTable[SYS_RM_INT], (uint64_t) sys_rm_handler_wrapper, 3);
     setupIDTEntry(&IDTable[SYS_ENABLE_KB_TIM_INT], (uint64_t) sys_kb_tim_handler_wrapper, 3);
     setupIDTEntry(&IDTable[SYS_YIELD_INT], (uint64_t) sys_yield_handler_wrapper, 3);
+    setupIDTEntry(&IDTable[SYS_START_INT], (uint64_t) sys_start_handler_wrapper, 3);
+    setupIDTEntry(&IDTable[SYS_STOP_INT], (uint64_t) sys_stop_handler_wrapper, 3);
+    setupIDTEntry(&IDTable[SYS_READ_INT], (uint64_t) sys_read_handler_wrapper, 3);
+    setupIDTEntry(&IDTable[SYS_WRITE_INT], (uint64_t) sys_write_handler_wrapper, 3);
     idt_ptr->base = (uint64_t) IDTable;
     idt_ptr->limit = sizeof(IDTable)-1;
 }
@@ -186,6 +195,22 @@ void exception(registers_t* reg){
 
         case SYS_YIELD_INT:
             sys_yield();
+            break;
+
+        case SYS_START_INT:
+            sys_start(reg);
+            break;
+
+        case SYS_STOP_INT:
+            sys_stop(reg);
+            break;
+
+        case SYS_READ_INT:
+            read_file(reg->reg_rdi, reg->reg_rsi);
+            break;
+
+        case SYS_WRITE_INT:
+            write_file(reg->reg_rdi, reg->reg_rsi, reg->reg_rdx);
             break;
     }
     if(!reschedule && current->state == P_RUNNABLE){

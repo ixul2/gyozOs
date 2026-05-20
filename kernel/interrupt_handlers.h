@@ -19,6 +19,10 @@
 #define SYS_RM_INT 0x86
 #define SYS_ENABLE_KB_TIM_INT 0x87
 #define SYS_YIELD_INT 0x88
+#define SYS_START_INT 0x89
+#define SYS_STOP_INT 0x8A
+#define SYS_READ_INT 0x8B
+#define SYS_WRITE_INT 0x8C
 
 // Timer-related constants
 #define IO_TIMER1 0x040            /* 8253 Timer #1 */
