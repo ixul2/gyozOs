@@ -120,13 +120,16 @@ void readFileName(unsigned char *fat32Name, unsigned char* filename){ //FAT32 ha
 }
 
 void writeFileName(char *fat32Name, char* filename){
+    for (int i = 0; i < 11; i++){
+        fat32Name[i] = ' ';
+    }
     int index = 0;
     while ((index < 8) && (filename[index] != '.')){
+        if (filename[index] == '\0'){
+            return ;
+        }
         fat32Name[index] = filename[index];
         index++;
-    }
-    for (int i = index; i < 8; i++){
-        fat32Name[i] = ' ';
     }
     for (int i = 0; i < 3; i++){
         fat32Name[8+i] = filename[index+i+1];
@@ -154,6 +157,9 @@ void getMetadataFileFromDirectory(FAT32_Metadata infoFat, uint32_t dirCluster, u
     entry -> attr = record[11];
     entry -> fstCluster = *((uint16_t*)(record + 20)) << 16;
     entry -> fstCluster += *((uint16_t*)(record + 26));
+    if (entry -> fstCluster == 0){
+        entry -> fstCluster = 2;
+    }
     entry -> size = *((uint32_t*)(record + 28));
 }
 

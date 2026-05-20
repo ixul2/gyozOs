@@ -177,15 +177,19 @@ void process_cmd(void){
     } else if (cmd2_len == 0 && strcmp(cmd1,"help") == 0){
         sys_write("Availables commands: ls help clean cd mkdir rm start stop write read\n");
     } else if (cmd2_len != 0 && cmd3_len == 0 && strcmp(cmd1,"mkdir") == 0) {
-        int ind = ind_of_file_in_current_directory(cmd2);
-        if(ind != -1){
-            sys_write(cmd2);
-            sys_write(" already exists\n");
+        if(cmd_len >= 4 && cmd2[cmd2_len-1] == 'T' && cmd2[cmd2_len-2] == 'X' && cmd2[cmd2_len-3] == 'T' && cmd2[cmd2_len-4] == '.'){
+            sys_write("Can't enter a text file\n");
         } else {
-            sys_mkdir();
+            int ind = ind_of_file_in_current_directory(cmd2);
+            if(ind != -1 || strcmp(cmd2,".") == 0 || strcmp(cmd2,"..") == 0){
+                sys_write(cmd2);
+                sys_write(" already exists\n");
+            } else {
+                sys_mkdir();
+            }
         }
     } else if (cmd2_len != 0 && cmd3_len == 0 && strcmp(cmd1,"cd") == 0){
-        if(cmd_len >= 4 && cmd2[cmd2_len-1] == 't' && cmd2[cmd2_len-2] == 'x' && cmd2[cmd2_len-3] == 't' && cmd2[cmd2_len-4] == '.'){
+        if(cmd_len >= 4 && cmd2[cmd2_len-1] == 'T' && cmd2[cmd2_len-2] == 'X' && cmd2[cmd2_len-3] == 'T' && cmd2[cmd2_len-4] == '.'){
             sys_write("Can't enter a text file\n");
         } else {
                 int ind = ind_of_file_in_current_directory(cmd2);
@@ -253,7 +257,7 @@ void process_cmd(void){
             }
         }
     } else if (strcmp(cmd1,"write") == 0){
-        if(cmd2_len < 4 || cmd2[cmd2_len-1] != 't' || cmd2[cmd2_len-2] != 'x' || cmd2[cmd2_len-3] != 't' || cmd2[cmd2_len-4] != '.'){
+        if(cmd2_len < 4 || cmd2[cmd2_len-1] != 'T' || cmd2[cmd2_len-2] != 'X' || cmd2[cmd2_len-3] != 'T' || cmd2[cmd2_len-4] != '.'){
             sys_write("The file must end by \".txt\"\n");
         } else {
             int ind = ind_of_file_in_current_directory(cmd2);
@@ -263,7 +267,7 @@ void process_cmd(void){
             sys_write_file();
         }
     } else if (cmd3_len == 0 && strcmp(cmd1,"read") == 0){
-        if(cmd2_len < 4 || cmd2[cmd2_len-1] != 't' || cmd2[cmd2_len-2] != 'x' || cmd2[cmd2_len-3] != 't' || cmd2[cmd2_len-4] != '.'){
+        if(cmd2_len < 4 || cmd2[cmd2_len-1] != 'T' || cmd2[cmd2_len-2] != 'X' || cmd2[cmd2_len-3] != 'T' || cmd2[cmd2_len-4] != '.'){
             sys_write("The file must end by \".txt\"\n");
         } else {
             int ind = ind_of_file_in_current_directory(cmd2);

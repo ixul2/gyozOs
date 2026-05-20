@@ -211,11 +211,11 @@ void exception(registers_t* reg){
             break;
 
         case SYS_READ_INT:
-            read_file(reg->reg_rdi, reg->reg_rsi);
+            read_file(reg->reg_rdi, (char*)reg->reg_rsi);
             break;
 
         case SYS_WRITE_INT:
-            write_file(reg->reg_rdi, reg->reg_rsi, reg->reg_rdx);
+            write_file((char*)reg->reg_rdi, reg->reg_rsi, (char*)reg->reg_rdx);
             break;
     }
     if(!reschedule && current->state == P_RUNNABLE){

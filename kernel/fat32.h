@@ -8,7 +8,7 @@
 typedef struct FAT32_Metadata FAT32_Metadata;
 struct FAT32_Metadata {
     int sectorPerCluster;
-    uint32_t rootCluster;
+    int rootCluster;
     int fatLBA;
     int fstClusterLBA;
     int sectorPerFat;
@@ -35,5 +35,6 @@ void readBootSector(drive_info hardDrive, uint32_t partitionAddr, FAT32_Metadata
 void getMetadataFileFromDirectory(FAT32_Metadata infoFat, uint32_t dirCluster, uint32_t index, FAT32_entry *entry);
 void removeEntryFromDirectory(FAT32_Metadata infoFat, uint32_t dirCluster, uint32_t index);
 void mkdir(FAT32_Metadata infoFat, uint32_t dirCluster, char *directoryName);
+void writeFile(FAT32_Metadata infoFat, uint32_t dirCluster, char* filename, uint8_t* buffer, int bufferSize);
 
 #endif
