@@ -78,6 +78,7 @@ void setupPIC(){
     outb(0x21, 0x01); //enable 8086/88 mode
     outb(0xA1, 0x01);
     
+    //Setsup the timer
     outb(TIMER_MODE, TIMER_SEL0 | TIMER_RATEGEN | TIMER_16BIT);
     outb(IO_TIMER1, TIMER_DIV(100) % 256);
     outb(IO_TIMER1, TIMER_DIV(100) / 256);
@@ -104,6 +105,7 @@ void sys_write_char_handler(registers_t *reg) {
 void sys_getchar_handler(void) {
     proc* p = current;
     if (kb_head == kb_tail) {
+        //If no charcacter available, block the process
         p->state = P_BLOCKED;
         keyboard_waiting = p;
         reschedule = 1;
@@ -119,6 +121,7 @@ void sys_list_files_handler(registers_t *reg){
     current->reg.reg_rax = cont;
 }
 
+//Move the cursor
 void sys_cursor_handler(registers_t *reg){
     outb(0x3D4, 0x0F);                // cursor location low byte
     outb(0x3D5, (uint8_t)(reg->reg_rdi & 0xFF));
@@ -139,11 +142,13 @@ void sys_rm_handler(registers_t* reg){
     remove_directory((int)reg->reg_rdi);
 }
 
+//Changes process on tick
 void time_handler(){
     reschedule = 1;
     outb(0x20, 0x20);
 }
 
+//Changes process on call
 void sys_yield(){
     reschedule = 1;
 }

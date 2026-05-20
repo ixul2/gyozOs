@@ -18,6 +18,7 @@ typedef struct ramimage {
     void *end;
 } ramimage;
 
+//Stores the location of all the programs
 ramimage ramimages[] = {
     {   .begin = _binary_userspace__obj_p_idle_bin_start,
         .end = _binary_userspace__obj_p_idle_bin_end },
@@ -37,19 +38,21 @@ void init_process(proc* p){
     p->reg.reg_ss = SEGSEL_APP_DATA | 3;
     p->reg.reg_rflags = EFLAGS_IF;
 
+    //All processes share the same table as the kernel
     p->page_table = kernel_pagetable;
     frames_info[(uintptr_t)kernel_pagetable/PAGE_SIZE].refcount++;
 }
 
 void load_process(proc* p, int program) {
     ramimage prog = ramimages[program];
-    
 
     size_t bin_size = (size_t)((size_t)prog.end - (size_t)prog.begin);
     size_t pages_needed = (bin_size + PAGE_SIZE - 1) / PAGE_SIZE;
 
+    //User_base must equal the address in the linker of the program
     uintptr_t user_base = PROC_START_ADDR + (p->id) * PROC_SIZE;
 
+    //Maps all the required pages to store the program
     for (size_t i = 0; i < pages_needed; i++) {
         map_page(p->page_table,
             user_base + i * PAGE_SIZE,
@@ -65,6 +68,7 @@ void load_process(proc* p, int program) {
     if (last_page_off != 0)
         memset((void*)(user_base + bin_size), 0, PAGE_SIZE - last_page_off);
 
+    //Maps the stack
     size_t stack_pages = 1;
     for (size_t i = 0; i < stack_pages; i++) {
         map_page(p->page_table,
@@ -76,18 +80,21 @@ void load_process(proc* p, int program) {
         memset((void *)(user_base + PROC_SIZE - (i + 1) * PAGE_SIZE), 0, PAGE_SIZE);
     }
 
+    //Sets entry point and stack
     p->reg.reg_rip = user_base;
     p->reg.reg_rsp = user_base + PROC_SIZE - 8;
 
     p->state = P_RUNNABLE;
 }
 
+//Initializes all the processes
 void init_processes(){
     memset((void*) procs, 0, sizeof(procs));
     for(int i = 0; i < PROC_NUMBER; i++){
         procs[i].id = i;
         init_process(&procs[i]);
     }
+    //Idle process is always running
     load_process(&procs[0],0);
 }
 
@@ -100,6 +107,7 @@ void run(proc *p) {
     current = p;
     // Load the process's current pagetable.
     change_pagetable(p->page_table);
+    // Changes the value of the registers to be equal to those stored in p->reg
     exception_return(&p->reg);
 
 spinloop:
@@ -117,15 +125,18 @@ void schedule(){
             run(&procs[id]);
         }
     }
+    //If no runnable process, goes idle
     run(&procs[0]);
 }
 
+//Called to start any of the dummy processes
 void sys_start(registers_t* reg){
     assert(reg->reg_rdi == 2 || reg->reg_rdi == 3,"Not a startable process");
     assert(procs[reg->reg_rdi].state == P_FREE,"Process already running");
     load_process(&procs[reg->reg_rdi],reg->reg_rdi);
 }
 
+//Called to stop any of the dummy processes
 void sys_stop(registers_t* reg){
     assert(reg->reg_rdi == 2 || reg->reg_rdi == 3,"Not a stoppable process");
     assert(procs[reg->reg_rdi].state == P_RUNNABLE,"Process already running");

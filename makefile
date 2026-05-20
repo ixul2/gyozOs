@@ -88,10 +88,10 @@ bootloader/_obj/bootloader.o: bootloader/boot.c
 
 
 # =========================================================
-# Userspace : p_shell
+# Userspace :
 # =========================================================
 
-userspace/_obj/p_shell.o: userspace/p_shell.c
+userspace/_obj/p_%.o: userspace/p_%.c
 	mkdir -p userspace/_obj
 	gcc \
 		-ffreestanding \
@@ -102,7 +102,7 @@ userspace/_obj/p_shell.o: userspace/p_shell.c
 		-o $@ $<
 
 # Link to an ELF first (so we keep all section headers)
-userspace/_obj/p_shell.elf: userspace/_obj/p_shell.o
+userspace/_obj/p_%.elf: userspace/_obj/p_%.o
 	ld \
 		-e process_main \
 		-T userspace/link/p_shell.ld \
@@ -110,141 +110,14 @@ userspace/_obj/p_shell.elf: userspace/_obj/p_shell.o
 		$^
 
 # Convert ELF to raw binary, forcing .bss to be included as zero bytes
-userspace/_obj/p_shell.bin: userspace/_obj/p_shell.elf
+userspace/_obj/p_%.bin: userspace/_obj/p_%.elf
 	objcopy \
 		-O binary \
 		--set-section-flags .bss=alloc,load,contents \
 		$< \
 		$@
 
-# =========================================================
-# Embed p_shell.bin into kernel
-# =========================================================
-
-userspace/_obj/p_shell_embedded.o: userspace/_obj/p_shell.bin
-	ld \
-		-r \
-		-b binary \
-		-o $@ \
-		$<
-
-# =========================================================
-# Userspace : p_dummy1
-# =========================================================
-
-userspace/_obj/p_dummy1.o: userspace/p_dummy1.c
-	mkdir -p userspace/_obj
-	gcc \
-		-ffreestanding \
-		-fno-pie \
-		-fno-pic \
-		-m64 \
-		-c \
-		-o $@ $<
-
-# Link to an ELF first (so we keep all section headers)
-userspace/_obj/p_dummy1.elf: userspace/_obj/p_dummy1.o
-	ld \
-		-e process_main \
-		-T userspace/link/p_dummy1.ld \
-		-o $@ \
-		$^
-
-# Convert ELF to raw binary, forcing .bss to be included as zero bytes
-userspace/_obj/p_dummy1.bin: userspace/_obj/p_dummy1.elf
-	objcopy \
-		-O binary \
-		--set-section-flags .bss=alloc,load,contents \
-		$< \
-		$@
-
-# =========================================================
-# Embed p_dummy1.bin into kernel
-# =========================================================
-
-userspace/_obj/p_dummy1_embedded.o: userspace/_obj/p_dummy1.bin
-	ld \
-		-r \
-		-b binary \
-		-o $@ \
-		$<
-
-# =========================================================
-# Userspace : p_dummy2
-# =========================================================
-
-userspace/_obj/p_dummy2.o: userspace/p_dummy2.c
-	mkdir -p userspace/_obj
-	gcc \
-		-ffreestanding \
-		-fno-pie \
-		-fno-pic \
-		-m64 \
-		-c \
-		-o $@ $<
-
-# Link to an ELF first (so we keep all section headers)
-userspace/_obj/p_dummy2.elf: userspace/_obj/p_dummy2.o
-	ld \
-		-e process_main \
-		-T userspace/link/p_dummy2.ld \
-		-o $@ \
-		$^
-
-# Convert ELF to raw binary, forcing .bss to be included as zero bytes
-userspace/_obj/p_dummy2.bin: userspace/_obj/p_dummy2.elf
-	objcopy \
-		-O binary \
-		--set-section-flags .bss=alloc,load,contents \
-		$< \
-		$@
-
-# =========================================================
-# Embed p_dummy2.bin into kernel
-# =========================================================
-
-userspace/_obj/p_dummy2_embedded.o: userspace/_obj/p_dummy2.bin
-	ld \
-		-r \
-		-b binary \
-		-o $@ \
-		$<
-
-# =========================================================
-# Userspace : p_idle
-# =========================================================
-
-userspace/_obj/p_idle.o: userspace/p_idle.c
-	mkdir -p userspace/_obj
-	gcc \
-		-ffreestanding \
-		-fno-pie \
-		-fno-pic \
-		-m64 \
-		-c \
-		-o $@ $<
-
-# Link to an ELF first (so we keep all section headers)
-userspace/_obj/p_idle.elf: userspace/_obj/p_idle.o
-	ld \
-		-e process_main \
-		-T userspace/link/p_idle.ld \
-		-o $@ \
-		$^
-
-# Convert ELF to raw binary, forcing .bss to be included as zero bytes
-userspace/_obj/p_idle.bin: userspace/_obj/p_idle.elf
-	objcopy \
-		-O binary \
-		--set-section-flags .bss=alloc,load,contents \
-		$< \
-		$@
-
-# =========================================================
-# Embed p_idle.bin into kernel
-# =========================================================
-
-userspace/_obj/p_idle_embedded.o: userspace/_obj/p_idle.bin
+userspace/_obj/p_%_embedded.o: userspace/_obj/p_%.bin
 	ld \
 		-r \
 		-b binary \

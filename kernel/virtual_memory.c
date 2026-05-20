@@ -63,8 +63,6 @@ int physical_memory_isreserved(uintptr_t pa) {
 static frame_info frames_info[FRAME_NUMBER]
     __attribute__((aligned(4096)));
 
-//Finds first free frame from the bitmap
-
 static inline int find_free_frame(){
     for(int i = 0; i<FRAME_NUMBER; i++){
         if(frames_info[i].owner == PO_FREE){
@@ -96,8 +94,6 @@ int assign_physical_page(uintptr_t addr, int8_t owner) {
     return 0;
   }
 }
-
-//Allocate frame and returns its physical address
 
 void init_framing(){
     extern char end[];
