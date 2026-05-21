@@ -98,7 +98,7 @@ void process_main(){
 
 char cmd1[BUFF_LEN+1];
 int cmd1_len;
-char cmd2[BUFF_LEN+4];
+char cmd2[BUFF_LEN+1];
 int cmd2_len;
 char cmd3[BUFF_LEN+1];
 int cmd3_len;
@@ -107,6 +107,11 @@ void parse_cmd(void){
     cmd1_len = 0;
     cmd2_len = 0;
     cmd3_len = 0;
+    for(int i = 0; i<=BUFF_LEN; i++){
+        cmd1[i] = 0;
+        cmd2[i] = 0;
+        cmd3[i] = 0;
+    }
     int ind = 0;
     while(ind < cmd_len && cmd[ind] == ' '){
         ind++;
@@ -116,7 +121,6 @@ void parse_cmd(void){
         cmd1_len++;
         ind++;
     }
-    cmd1[cmd1_len] = '\0';
     while(ind < cmd_len && cmd[ind] == ' '){
         ind++;
     }
@@ -125,7 +129,6 @@ void parse_cmd(void){
         cmd2_len++;
         ind++;
     }
-    cmd2[cmd2_len] = '\0';
     while(ind < cmd_len && cmd[ind] == ' '){
         ind++;
     }
@@ -134,7 +137,6 @@ void parse_cmd(void){
         cmd3_len++;
         ind++;
     }
-    cmd3[cmd3_len] = '\0';
 }
 
 char file_name_return[51];

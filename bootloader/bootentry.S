@@ -18,39 +18,35 @@ notify_bios64:
         movw    $2, %dx
         int     $0x15
 
-        .set INITIAL_PT,0x8000
         .set PTE_P,1
         .set PTE_W,2
         .set PTE_U,4
         .set PTE_PS,128
 
 init_boot_pagetable:
-        # clear memory for boot page table (L4 @ 0x1000, PDPT @ 0x2000, PD @ 0x3000)
         .set BOOT_PAGETABLE,0x1000
         movl    $BOOT_PAGETABLE, %edi
         xorl    %eax, %eax
-        movl    $(0x3000 >> 2), %ecx        # 3 pages = 0x3000 bytes
+        movl    $(0x3000 >> 2), %ecx
         rep stosl
 
         # --- L4 table at 0x1000 ---
         # Entry 0  -> identity PDPT at 0x2000
         movl    $BOOT_PAGETABLE, %edi
-        movl    $0x2000 + PTE_P + PTE_W, %ecx   # ecx = 0x2003
-        movl    %ecx, (%edi)                    # L4[0] = 0x2003
+        movl    $0x2000 + PTE_P + PTE_W, %ecx
+        movl    %ecx, (%edi)
 
-        # All other L4 entries remain 0 (no high‑canonical mappings)
 
         # --- Identity PDPT at 0x2000 ---
         # Entry 0  -> PD at 0x3000
         movl    $0x2000, %edi
-        movl    $0x3000 + PTE_P + PTE_W, %ecx   # ecx = 0x3003
-        movl    %ecx, (%edi)                    # PDPT[0] = 0x3003
+        movl    $0x3000 + PTE_P + PTE_W, %ecx
+        movl    %ecx, (%edi)
 
         # --- Identity PD at 0x3000 ---
-        # Entry 0  -> 2 MiB page at physical 0x00000000
         movl    $0x3000, %edi
-        movl    $(PTE_P + PTE_W + PTE_PS), %eax   # eax = 0x83
-        movl    %eax, (%edi)                     # PD[0] = 0x83 (phys 0, 2 MiB)
+        movl    $(PTE_P + PTE_W + PTE_PS), %eax
+        movl    %eax, (%edi)
 
         .set CR0_PE,0x1
         .set CR0_WP,0x10000
