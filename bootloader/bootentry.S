@@ -2,6 +2,9 @@
 # BOOT ENTRY POINT  (identity‑maps first 2 MiB only)
 ###############################################################################
 
+
+#WE USED THE BOOT FROM WEENSYOS
+
 .code16
 
 .set SEGSEL_BOOT_CODE, 0x8
